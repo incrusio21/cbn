@@ -12,19 +12,34 @@ def execute(filters=None):
 	return columns, data
 
 def get_result(filters):
-	data = []
+	ress = []
 
-	porggerss = frappe.db.sql(""" 
+	progress = frappe.db.sql(""" 
 		SELECT 
-			custom_batch as batch, wo.production_item as item_code, wo.item_name, wo.name as work_order, wo.status as status, 
+			custom_batch as batch, wo.production_item as item_code, wo.item_name, wo.qty, wo.name as work_order, wo.status as status, 
 			jc.operation, jc.workstation, jc.wip_warehouse as warehouse, jc.status as job_card_status, wo.company
 		FROM `tabWork Order` wo
 		LEFT JOIN `tabJob Card` jc on wo.name = jc.work_order
 		WHERE custom_batch = %(batch)s and wo.docstatus = 1
 	""", filters, as_dict=1)
 
+	work_order = {}
+	for row in progress:
+		wo_list = work_order.setdefault(row.work_order, [])
+		wo_progress = {
+			"operation": row.operation, "workstation": row.workstation, "warehouse": row.warehouse, "job_card_status": row.job_card_status,
+			"company": row.company
+		}
 
-	return porggerss
+		if not wo_list:
+			wo_progress.update(row)
+
+		wo_list.append(wo_progress)
+
+	for data in work_order.values():
+		ress.extend(data)
+
+	return ress
 
 def get_columns(filters):
 	columns = [
