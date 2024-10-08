@@ -8,6 +8,7 @@
  "field_order": [
   "disabled",
   "batch_id",
+  "item_code",
   "column_break_hwwm",
   "expired",
   "section_break_vjwn",
@@ -53,11 +54,18 @@
    "fieldname": "expired",
    "fieldtype": "Date",
    "label": "Expired"
+  },
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "label": "Production Item",
+   "options": "Item",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-10-04 14:54:00.280466",
+ "modified": "2024-10-08 11:42:59.152381",
  "modified_by": "Administrator",
  "module": "Cbn",
  "name": "Batch Manufacture",

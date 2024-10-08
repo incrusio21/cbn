@@ -7,6 +7,20 @@ from erpnext.manufacturing.doctype.work_order.work_order import WorkOrder
 from cbn.cbn.custom.bom import get_bom_items_as_dict
 
 class WorkOrder(WorkOrder):
+    def validate(self):
+        super().validate()
+        self.validate_and_update_batch_manufacture()
+
+    def validate_and_update_batch_manufacture(self):
+        if self.custom_is_sub_assembly or not self.custom_batch:
+            return
+        
+        batch_mf = frappe.get_value("Batch Manufacture", self.custom_batch, ["item_code", "status"], as_dict=1 ,for_update=1)
+        if batch_mf.item_code != self.production_item:
+            frappe.throw("Batch {} cannot be used to Item {}".format(self.custom_batch, self.production_item))
+        elif batch_mf.status != "Empty":
+            frappe.throw("Batch {} already {}".format(self.custom_batch, batch_mf.status))
+        
     def set_required_items(self, reset_only_qty=False):
         """set required_items for production to keep track of reserved qty"""
         if not reset_only_qty:

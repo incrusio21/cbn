@@ -4,7 +4,6 @@
 import frappe
 from frappe.utils.data import flt
 
-
 @frappe.whitelist()
 def make_stock_entry(work_order_id, purpose, qty=None):
 	work_order = frappe.get_doc("Work Order", work_order_id)
