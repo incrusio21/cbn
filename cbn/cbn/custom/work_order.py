@@ -1,8 +1,94 @@
-# Copyright (c) 2024, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2024, DAS and Contributors
 # License: GNU General Public License v3. See license.txt
 
 import frappe
+from frappe.utils import get_link_to_form, getdate, nowdate
 from frappe.utils.data import flt
+
+def validate_batch_manufacture(self, method=None):
+	if self.custom_is_sub_assembly or not self.custom_batch:
+		return
+	
+	batch_mf = frappe.get_value("Batch Manufacture", self.custom_batch, ["item_code", "disabled", "status"], as_dict=1 ,for_update=1)
+	if batch_mf.disabled:
+		frappe.throw("Batch {} disabled".format(self.custom_batch))
+	elif batch_mf.item_code != self.production_item:
+		frappe.throw("Batch {} cannot be used to Item {}".format(self.custom_batch, self.production_item))
+	elif batch_mf.status != "Empty":
+		frappe.throw("Batch {} already {}".format(self.custom_batch, batch_mf.status))
+
+def update_or_add_sub_assembly_batch_manufacture(self, method=None):
+	if not self.custom_batch:
+		return
+	
+	if not self.custom_is_sub_assembly:
+		frappe.set_value("Batch Manufacture", self.custom_batch, "status", "Used" if self.docstatus == 1 else "Empty")
+		return
+
+	if self.docstatus == 1:
+		add_sub_assembly = "add_sub_assembly"
+		try:
+			frappe.db.savepoint(add_sub_assembly)
+			batch_manufacture = frappe.get_doc("Batch Manufacture", self.custom_batch)
+			batch_manufacture.append("sub_assembly", {
+				"item_code": self.production_item
+			})
+			batch_manufacture.flags.ignore_permissions = 1
+			batch_manufacture.save()
+		except frappe.UniqueValidationError:
+			frappe.message_log.pop()
+			frappe.db.rollback(save_point=add_sub_assembly)  # preserve transaction in postgres
+
+def update_status_multi_level_bom(self, method=None):
+	if not self.custom_is_sub_assembly:
+		return
+	
+	if not self.custom_parent_work_order or not self.custom_parent_work_order_item:
+		frappe.throw("Parent Work Order or Work Order Item not Found")
+
+	from cbn.controllers.status_updater import update_prev_doc
+
+	update_prev_doc(self, {
+		"target_dt": 'Work Order Item',
+		"target_field": "custom_work_order_qty",
+		"source_dt": "Work Order",
+		"source_field": "qty",
+		"join_field": "custom_parent_work_order_item",
+		"target_parent_dt": "Work Order",
+		"target_parent_field": "custom_per_work_order",
+		"target_ref_field": "required_qty",
+		"percent_join_field": "custom_parent_work_order",
+		"extra_parent_cond": """ and ifnull(custom_bom, "") != "" """
+	})
+
+@frappe.whitelist()
+def create_work_order(work_order):
+	cr_wo = []
+	wo = frappe.get_doc("Work Order", work_order)
+	for row in wo.required_items:
+		if not row.get("custom_bom"):
+			continue
+		
+		wo_sub_assembly = frappe.new_doc("Work Order")
+		wo_sub_assembly.production_item = row.item_code
+		wo_sub_assembly.bom_no = row.custom_bom
+		wo_sub_assembly.qty = flt(row.required_qty - row.custom_work_order_qty)
+		wo_sub_assembly.custom_batch = wo.custom_batch
+		wo_sub_assembly.custom_is_sub_assembly = 1
+		wo_sub_assembly.custom_parent_work_order = work_order
+		wo_sub_assembly.custom_parent_work_order_item = row.name
+		wo_sub_assembly.use_multi_level_bom = 0
+		# wo_sub_assembly.wip_warehouse = wo.wo_sub_assembly	
+		wo_sub_assembly.fg_warehouse = wo.source_warehouse
+
+		wo_sub_assembly.get_items_and_operations_from_bom()
+		wo_sub_assembly.flags.ignore_validate = 1
+		wo_sub_assembly.save()
+		cr_wo.append(get_link_to_form("Work Order", wo_sub_assembly.name) )
+		
+		cr_wo.extend(create_work_order(wo_sub_assembly.name))
+
+	return cr_wo
 
 @frappe.whitelist()
 def make_stock_entry(work_order_id, purpose, qty=None):

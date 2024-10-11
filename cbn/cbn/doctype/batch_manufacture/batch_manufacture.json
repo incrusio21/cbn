@@ -10,10 +10,13 @@
   "batch_id",
   "item_code",
   "column_break_hwwm",
-  "expired",
+  "expiry_date",
+  "batch_qty",
   "section_break_vjwn",
   "description",
-  "status"
+  "status",
+  "sub_assembly_tab",
+  "sub_assembly"
  ],
  "fields": [
   {
@@ -51,21 +54,40 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "expired",
-   "fieldtype": "Date",
-   "label": "Expired"
-  },
-  {
    "fieldname": "item_code",
    "fieldtype": "Link",
    "label": "Production Item",
    "options": "Item",
+   "read_only_depends_on": "eval:doc.status != \"Empty\"",
    "reqd": 1
+  },
+  {
+   "fieldname": "sub_assembly_tab",
+   "fieldtype": "Tab Break",
+   "label": "Sub Assembly"
+  },
+  {
+   "fieldname": "sub_assembly",
+   "fieldtype": "Table",
+   "label": "Sub Assembly",
+   "options": "Batch Manufacture Sub Assembly",
+   "read_only": 1
+  },
+  {
+   "fieldname": "expiry_date",
+   "fieldtype": "Date",
+   "label": "Expired"
+  },
+  {
+   "fieldname": "batch_qty",
+   "fieldtype": "Float",
+   "label": "Qty",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-10-08 11:42:59.152381",
+ "modified": "2024-10-10 15:00:26.271855",
  "modified_by": "Administrator",
  "module": "Cbn",
  "name": "Batch Manufacture",

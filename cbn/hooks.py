@@ -118,6 +118,7 @@ doctype_js = {
 
 override_doctype_class = {
 	"Stock Entry": "cbn.overrides.stock_entry.StockEntry",
+	"Stock Ledger Entry": "cbn.overrides.stock_ledger_entry.StockLedgerEntry",
 	"Work Order": "cbn.overrides.work_order.WorkOrder",
 }
 
@@ -125,13 +126,18 @@ override_doctype_class = {
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	# "*": {
+	# 	"on_update": "method",
+	# 	"on_cancel": "method",
+	# 	"on_trash": "method"
+	# }
+    "Work Order": {
+        "validate": "cbn.cbn.custom.work_order.validate_batch_manufacture",
+        "on_submit": ["cbn.cbn.custom.work_order.update_status_multi_level_bom","cbn.cbn.custom.work_order.update_or_add_sub_assembly_batch_manufacture"],
+        "on_cancel": ["cbn.cbn.custom.work_order.update_status_multi_level_bom", "cbn.cbn.custom.work_order.update_or_add_sub_assembly_batch_manufacture"],
+	}
+}
 
 # Scheduled Tasks
 # ---------------
