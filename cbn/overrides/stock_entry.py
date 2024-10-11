@@ -1,4 +1,4 @@
-# Copyright (c) 2024, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2024, DAS and Contributors
 # License: GNU General Public License v3. See license.txt
 
 from collections import defaultdict

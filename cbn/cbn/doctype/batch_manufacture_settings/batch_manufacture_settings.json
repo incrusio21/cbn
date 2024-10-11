@@ -1,0 +1,48 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-10-08 14:20:35.863508",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "proc_item_group",
+  "sa_item_group"
+ ],
+ "fields": [
+  {
+   "fieldname": "proc_item_group",
+   "fieldtype": "Link",
+   "label": "Production Item Group",
+   "options": "Item Group"
+  },
+  {
+   "fieldname": "sa_item_group",
+   "fieldtype": "Link",
+   "label": "Sub Assembly Item Group",
+   "options": "Item Group"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2024-10-08 14:40:12.215268",
+ "modified_by": "Administrator",
+ "module": "Cbn",
+ "name": "Batch Manufacture Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
