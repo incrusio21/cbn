@@ -49,8 +49,8 @@ class BatchManufacture:
                     "item_code": self.sle.item_code,
                     "warehouse": self.sle.warehouse,
                     "batch_no": batch_manufacture,
-                    "posting_date": self.sle.posting_date,
-                    "posting_time": self.sle.posting_time,
+                    # "posting_date": self.sle.posting_date,
+                    # "posting_time": self.sle.posting_time,
                     "consider_negative_batches": True,
                 }
             )
@@ -73,7 +73,7 @@ class BatchManufacture:
         if available_qty < 0:
             msg = f"""Batch Manufacture {bold(batch_no)} of an Item {bold(self.item_code)}
                 has negative stock
-                of quantity {bold(available_qty)} on {self.sle.posting_date} {self.sle.posting_time} in the
+                of quantity {bold(available_qty)} in the
                 warehouse {self.warehouse}"""
 
             frappe.throw(_(msg), BatchNegativeStockError)
