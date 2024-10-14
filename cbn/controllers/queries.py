@@ -118,3 +118,84 @@ def item_query(doctype, txt, searchfield, start, page_len, filters, as_dict=Fals
         },
         as_dict=as_dict,
     )
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def batch_manufacture_query(doctype, txt, searchfield, start, page_len, filters, as_dict=False):
+    doctype = "Batch Manufacture"
+    join = ""
+    conditions = []
+
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+
+    # Get searchfields from meta and use in Item Link field query
+    meta = frappe.get_meta(doctype, cached=True)
+    searchfields = meta.get_search_fields()
+
+    columns = ""
+    extra_searchfields = [field for field in searchfields if field not in ["name"]]
+
+    if extra_searchfields:
+        columns += ", " + ", ".join(extra_searchfields)
+
+    searchfields = searchfields + [
+        field
+        for field in [searchfield or "name"]
+        if field not in searchfields
+    ]
+
+    searchfields = " or ".join([f"`tab{doctype}`." + field + " like %(txt)s" for field in searchfields])
+
+    if filters and isinstance(filters, dict):    
+        if filters.get("item_group"):
+            bm_setting = frappe.get_cached_doc("Batch Manufacture Settings")
+            if bm_setting.sa_item_group == filters.get("item_group"):
+                doctype = "Batch Manufacture Sub Assembly"
+                join += """ join `tabBatch Manufacture Sub Assembly` on `tabBatch Manufacture Sub Assembly`.parent = `tabBatch Manufacture`.name """
+            elif bm_setting.proc_item_group != filters.get("item_group"):
+                return []
+
+            filters["batch_qty"] = [">", 0]
+            
+            del filters["item_group"]
+        else:
+            filters.pop("item_group", None)
+
+    description_cond = ""
+    if frappe.db.count(doctype, cache=True) < 50000:
+        # scan description only if items are less than 50000
+        description_cond = "or `tabBatch Manufacture`.description LIKE %(txt)s"
+
+    return frappe.db.sql(
+        """select
+            `tabBatch Manufacture`.name {columns}
+        from `tabBatch Manufacture` {join}
+        where `tabBatch Manufacture`.docstatus < 2
+            and `tabBatch Manufacture`.disabled=0
+            and (`tabBatch Manufacture`.expiry_date > %(today)s or ifnull(`tabBatch Manufacture`.expiry_date, '0000-00-00')='0000-00-00')
+            and ({scond}
+                {description_cond})
+            {fcond} {mcond}
+        order by
+            if(locate(%(_txt)s, `tabBatch Manufacture`.name), locate(%(_txt)s, `tabBatch Manufacture`.name), 99999),
+            `tabBatch Manufacture`.idx desc,
+            `tabBatch Manufacture`.name
+        limit %(start)s, %(page_len)s """.format(
+            columns=columns,
+            join=join,
+            scond=searchfields,
+            fcond=get_filters_cond(doctype, filters, conditions).replace("%", "%%"),
+            mcond=get_match_cond(doctype).replace("%", "%%"),
+            description_cond=description_cond,
+        ),
+        {
+            "today": nowdate(),
+            "txt": "%%%s%%" % txt,
+            "_txt": txt.replace("%", ""),
+            "start": start,
+            "page_len": page_len,
+        },
+        as_dict=as_dict,
+        debug=1
+    )
