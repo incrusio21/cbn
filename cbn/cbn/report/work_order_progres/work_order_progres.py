@@ -19,7 +19,7 @@ def get_result(filters):
 			custom_batch as batch, wo.production_item as item_code, wo.item_name, wo.qty, wo.name as work_order, wo.status as status, 
 			jc.operation, jc.workstation, jc.wip_warehouse as warehouse, jc.status as job_card_status, wo.company
 		FROM `tabWork Order` wo
-		LEFT JOIN `tabJob Card` jc on wo.name = jc.work_order
+		LEFT JOIN `tabJob Card` jc on wo.name = jc.work_order and jc.docstatus < 2
 		WHERE custom_batch = %(batch)s and wo.docstatus = 1
 	""", filters, as_dict=1)
 
