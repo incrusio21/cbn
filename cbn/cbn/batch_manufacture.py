@@ -43,23 +43,21 @@ class BatchManufacture:
 
     def validate_batch_inventory(self):
         batch_manufacture = self.sle.custom_batch
-        self.available_batches = get_auto_batch_manufacture(
+        available_batches = get_auto_batch_manufacture(
             frappe._dict(
                 {
                     "item_code": self.sle.item_code,
                     "warehouse": self.sle.warehouse,
                     "batch_no": batch_manufacture,
-                    # "posting_date": self.sle.posting_date,
-                    # "posting_time": self.sle.posting_time,
                     "consider_negative_batches": True,
                 }
             )
         )
 
-        if not self.available_batches:
+        if not available_batches:
             return
 
-        available_batches = get_available_batches_qty(self.available_batches)
+        available_batches = get_available_batches_qty(available_batches)
         
         if batch_manufacture in available_batches and available_batches[batch_manufacture] < 0:
             if flt(available_batches.get(batch_manufacture)) < 0:
@@ -86,10 +84,13 @@ class BatchManufacture:
           
     def update_batch_qty(self):
         batch_no = self.sle.custom_batch
-        batches_qty = defaultdict(float)
+        available_batches = get_auto_batch_manufacture(
+            frappe._dict({"item_code": self.sle.item_code, "batch_no": self.sle.custom_batch })
+        )
 
-        for batch in self.available_batches:
-            batches_qty[batch.get("batch_no")] += batch.get("qty")
+        batches_qty = defaultdict(float)
+        for batch in available_batches:
+            batches_qty[batch.get("batch_manufacture")] += batch.get("qty")
 
         condition = {
 			"Production": ["Batch Manufacture", batch_no],
