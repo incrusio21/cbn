@@ -39,6 +39,9 @@ def get_sl_entries(self, d, args):
         }
     )
 
+    if d.get("item_row") and d.item_row.get("custom_batch"):
+        sl_dict.update({"custom_batch": d.item_row.custom_batch })
+
     sl_dict.update(args)
     self.update_inventory_dimensions(d, sl_dict)
 
