@@ -16,7 +16,7 @@ frappe.query_reports["Work Order Progres"] = {
 			label: __("Batch"),
 			fieldtype: "Link",
 			options: "Batch Manufacture",
-			reqd: 1,
+			// reqd: 1,
 		},
 	]
 };
