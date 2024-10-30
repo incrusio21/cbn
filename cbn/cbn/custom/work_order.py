@@ -5,6 +5,22 @@ import frappe
 from frappe.utils import get_link_to_form, getdate, nowdate
 from frappe.utils.data import flt
 
+def generate_custom_field_to_space(self, method=None):
+	for i in self.required_items:
+		if not i.custom_diberi_gr:
+			i.custom_diberi_gr = "_"
+		if not i.custom_diberi_pack:
+			i.custom_diberi_pack = "_"
+		if not i.custom_petugas_gudang:
+			i.custom_petugas_gudang = "_"
+		if not i.custom_ipc:
+			i.custom_ipc = "_"
+		if not i.custom_prd:
+			i.custom_prd = "_"
+		if not i.custom_keterangan:
+			i.custom_keterangan = "_"
+	
+
 def validate_batch_manufacture(self, method=None):
 	if self.custom_is_sub_assembly or not self.custom_batch:
 		return
