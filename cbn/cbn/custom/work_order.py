@@ -107,7 +107,7 @@ def create_work_order(work_order):
 	return cr_wo
 
 @frappe.whitelist()
-def make_stock_entry(work_order_id, purpose, qty=None):
+def make_stock_entry(work_order_id, purpose, qty=None, perintah_kerja=None):
 	work_order = frappe.get_doc("Work Order", work_order_id)
 	if not frappe.db.get_value("Warehouse", work_order.wip_warehouse, "is_group"):
 		wip_warehouse = work_order.wip_warehouse
@@ -120,6 +120,7 @@ def make_stock_entry(work_order_id, purpose, qty=None):
 	stock_entry.custom_batch = work_order.custom_batch
 	stock_entry.company = work_order.company
 	stock_entry.from_bom = 1
+	stock_entry.custom_perintah_produksi = perintah_kerja
 	stock_entry.bom_no = work_order.bom_no
 	stock_entry.use_multi_level_bom = work_order.use_multi_level_bom
 	# accept 0 qty as well

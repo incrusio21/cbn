@@ -148,6 +148,7 @@ class StockEntry(StockEntry):
         work_order = frappe.get_doc("Work Order", self.work_order)
 
         consider_job_card = work_order.transfer_material_against == "Job Card" and self.get("job_card")
+        consider_perintah_produksi = self.get("custom_perintah_produksi")
         if consider_job_card:
             job_card_items = self.get_job_card_item_codes(self.get("job_card"))
 
@@ -159,7 +160,10 @@ class StockEntry(StockEntry):
         for d in work_order.get("required_items"):
             if consider_job_card and (d.item_code not in job_card_items):
                 continue
-
+            
+            if consider_perintah_produksi and d.custom_perintah_produksi != consider_perintah_produksi:
+                continue
+            
             transfer_pending = flt(d.required_qty) > flt(d.transferred_qty)
             can_transfer = transfer_pending or (backflush_based_on == "Material Transferred for Manufacture")
 
