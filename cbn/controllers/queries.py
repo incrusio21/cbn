@@ -6,7 +6,7 @@ import json
 import frappe
 from frappe import scrub
 from frappe.desk.reportview import get_filters_cond, get_match_cond
-from frappe.utils import nowdate
+from frappe.utils import getdate, nowdate
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
@@ -161,6 +161,15 @@ def batch_manufacture_query(doctype, txt, searchfield, start, page_len, filters,
             del filters["item_group"]
         else:
             filters.pop("item_group", None)
+
+        if filters.get("date"):
+            date = getdate(filters.get("date"))
+            filters["bulan"] = date.month
+            filters["tahun"] = date.year
+
+            del filters["date"]
+        else:
+            filters.pop("date", None)
 
     description_cond = ""
     if frappe.db.count(doctype, cache=True) < 50000:

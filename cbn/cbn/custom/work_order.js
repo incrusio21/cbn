@@ -8,11 +8,17 @@ frappe.ui.form.on("Work Order", {
                 frappe.throw("Select Production Item First")
             }
 
+			if(!doc.custom_date){
+                frappe.throw("Select Date First")
+            }
+
 			return {
+				query: "cbn.controllers.queries.batch_manufacture_query",
 				filters: {
                     item_code: doc.production_item,
 					disabled: 0,
-                    status: "Empty"
+                    status: "Empty",
+					date: doc.custom_date,
 				},
 			};
 		});
@@ -50,3 +56,52 @@ frappe.ui.form.on("Work Order", {
 		}
 	},
 });
+
+erpnext.work_order.show_prompt_for_perintah_produksi = function (frm, purpose) {
+	let perintah_kerja = [...new Set((frm.doc.required_items || [])
+		.filter(item => item.required_qty > item.transferred_qty)
+		.map(item => item.custom_perintah_produksi))]
+
+	return new Promise((resolve) => {
+		frappe.prompt(
+			{
+				fieldtype: "Select",
+				label: __("Perintah Kerja"),
+				fieldname: "perintah_kerja",
+				reqd: 1,
+				options: perintah_kerja
+			},
+			(data) => {
+				resolve(
+					frappe.xcall("erpnext.manufacturing.doctype.work_order.work_order.make_stock_entry", {
+						work_order_id: frm.doc.name,
+						purpose: purpose,
+						perintah_kerja: data.perintah_kerja,
+					})
+				)
+			},
+			__("Select Perintah Kerja"),
+			__("Create")
+		);
+	});
+}
+
+erpnext.work_order.make_se = function (frm, purpose) {
+	if(purpose == "Material Transfer for Manufacture"){
+		var prompt = this.show_prompt_for_perintah_produksi(frm, purpose)
+	}else{
+		var prompt = this.show_prompt_for_qty_input(frm, purpose)
+		.then((data) => {
+			return frappe.xcall("erpnext.manufacturing.doctype.work_order.work_order.make_stock_entry", {
+				work_order_id: frm.doc.name,
+				purpose: purpose,
+				qty: data.qty,
+			});
+		})
+	}
+	
+	prompt.then((stock_entry) => {
+		frappe.model.sync(stock_entry);
+		frappe.set_route("Form", stock_entry.doctype, stock_entry.name);
+	});
+}

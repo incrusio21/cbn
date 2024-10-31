@@ -12,6 +12,8 @@
   "column_break_hwwm",
   "expiry_date",
   "batch_qty",
+  "bulan",
+  "tahun",
   "section_break_vjwn",
   "description",
   "status",
@@ -83,11 +85,23 @@
    "fieldtype": "Float",
    "label": "Qty",
    "read_only": 1
+  },
+  {
+   "fieldname": "bulan",
+   "fieldtype": "Int",
+   "label": "Bulan",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tahun",
+   "fieldtype": "Int",
+   "label": "Tahun",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-10-10 15:00:26.271855",
+ "modified": "2024-10-30 11:24:50.316899",
  "modified_by": "Administrator",
  "module": "Cbn",
  "name": "Batch Manufacture",
