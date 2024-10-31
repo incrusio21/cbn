@@ -8,17 +8,17 @@ from frappe.utils.data import flt
 def generate_custom_field_to_space(self, method=None):
 	for i in self.required_items:
 		if not i.custom_diberi_gr:
-			i.custom_diberi_gr = "_"
+			i.custom_diberi_gr = "."
 		if not i.custom_diberi_pack:
-			i.custom_diberi_pack = "_"
+			i.custom_diberi_pack = "."
 		if not i.custom_petugas_gudang:
-			i.custom_petugas_gudang = "_"
+			i.custom_petugas_gudang = "."
 		if not i.custom_ipc:
-			i.custom_ipc = "_"
+			i.custom_ipc = "."
 		if not i.custom_prd:
-			i.custom_prd = "_"
+			i.custom_prd = "."
 		if not i.custom_keterangan:
-			i.custom_keterangan = "_"
+			i.custom_keterangan = "."
 	
 
 def validate_batch_manufacture(self, method=None):
