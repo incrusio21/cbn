@@ -2,15 +2,17 @@
 # For license information, please see license.txt
 
 import frappe
-from frappe.auth import today
 from frappe.model.document import Document
 from frappe.query_builder.functions import CombineDatetime, Sum
-from frappe.utils import flt, nowtime
+from frappe.utils import flt, now_datetime, nowtime, today
 
 
 class BatchManufacture(Document):
-	pass
-
+	def autoname(self):
+		td = now_datetime()
+		self.bulan = td.month
+		self.tahun = td.year
+		
 def on_doctype_update():
 	frappe.db.add_unique("Batch Manufacture Sub Assembly", ["item_code", "parent"], constraint_name="unique_item_parent")
 

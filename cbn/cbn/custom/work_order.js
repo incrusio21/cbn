@@ -8,11 +8,17 @@ frappe.ui.form.on("Work Order", {
                 frappe.throw("Select Production Item First")
             }
 
+			if(!doc.custom_date){
+                frappe.throw("Select Date First")
+            }
+
 			return {
+				query: "cbn.controllers.queries.batch_manufacture_query",
 				filters: {
                     item_code: doc.production_item,
 					disabled: 0,
-                    status: "Empty"
+                    status: "Empty",
+					date: doc.custom_date,
 				},
 			};
 		});
