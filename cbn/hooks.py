@@ -171,7 +171,8 @@ doc_events = {
 # ------------------------------
 #
 override_whitelisted_methods = {
-	"erpnext.manufacturing.doctype.work_order.work_order.make_stock_entry": "cbn.cbn.custom.work_order.make_stock_entry"
+	"erpnext.manufacturing.doctype.work_order.work_order.make_stock_entry": "cbn.cbn.custom.work_order.make_stock_entry",
+    "erpnext.controllers.stock_controller.make_quality_inspections": "cbn.controllers.stock_controller.make_quality_inspections"
 }
 #
 # each overriding function accepts a `data` argument;
