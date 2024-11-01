@@ -68,6 +68,18 @@ doctype_js = {
 # 	"filters": "cbn.utils.jinja_filters"
 # }
 
+fixtures = [
+    {
+        "dt": "Stock Entry Type", 
+        "filters": [
+        	[
+				"name", "in", [
+                    "Return of Remaining Goods"
+				]
+			]
+    	]
+    }
+]
 # Installation
 # ------------
 
@@ -174,6 +186,7 @@ override_whitelisted_methods = {
 	"erpnext.manufacturing.doctype.work_order.work_order.make_stock_entry": "cbn.cbn.custom.work_order.make_stock_entry",
     "erpnext.controllers.stock_controller.make_quality_inspections": "cbn.controllers.stock_controller.make_quality_inspections"
 }
+
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,

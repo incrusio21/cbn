@@ -12,7 +12,7 @@ from erpnext.manufacturing.doctype.work_order.work_order import StockOverProduct
 from cbn.cbn.custom.bom import get_bom_items_as_dict
 
 class WorkOrder(WorkOrder):
-        
+    
     def set_required_items(self, reset_only_qty=False):
         """set required_items for production to keep track of reserved qty"""
         if not reset_only_qty:
@@ -60,6 +60,23 @@ class WorkOrder(WorkOrder):
 
             self.set_available_qty()
 
+    def update_required_items(self):
+        """
+        update bin reserved_qty_for_production
+        called from Stock Entry for production, after submit, cancel
+        """
+        # calculate consumed qty based on submitted stock entries
+        self.update_consumed_qty_for_required_items()
+
+        if self.docstatus == 1:
+            # calculate transferred qty based on submitted stock entries
+            self.update_transferred_qty_for_required_items()
+            self.update_returned_qty()
+
+            # update in bin
+            self.update_reserved_qty_for_production()
+            self.update_returned_raw_material()
+    
     def update_transferred_qty_for_required_items(self):
         ste = frappe.qb.DocType("Stock Entry")
         ste_child = frappe.qb.DocType("Stock Entry Detail")
@@ -94,10 +111,37 @@ class WorkOrder(WorkOrder):
             transfer = row.transferred_qty if row.transferred_qty <= row.required_qty else row.required_qty
             transfered_percent.append(transfer/row.required_qty)
 
-        print(transfered_percent)
         if self.custom_use_perintah_produksi:
             self.db_set("material_transferred_for_manufacturing", 
                 flt(min(transfered_percent) * self.qty, self.precision("material_transferred_for_manufacturing"))
+            )
+
+    def update_returned_raw_material(self):
+        ste = frappe.qb.DocType("Stock Entry")
+        ste_child = frappe.qb.DocType("Stock Entry Detail")
+
+        query = (
+            frappe.qb.from_(ste)
+            .inner_join(ste_child)
+            .on(ste_child.parent == ste.name)
+            .select(
+                ste_child.item_code,
+                ste_child.original_item,
+                fn.Sum(ste_child.qty).as_("qty"),
+            )
+            .where(
+                (ste.docstatus == 1)
+                & (ste.work_order == self.name)
+                & (ste.stock_entry_type == "Return of Remaining Goods")
+            )
+            .groupby(ste_child.item_code)
+        )
+
+        data = query.run(as_dict=1) or []
+        transferred_items = frappe._dict({d.original_item or d.item_code: d.qty for d in data})
+        for row in self.required_items:
+            row.db_set(
+                "custom_remaining_goods", (transferred_items.get(row.item_code) or 0.0), update_modified=False
             )
 
     def update_work_order_qty(self):

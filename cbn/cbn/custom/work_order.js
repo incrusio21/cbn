@@ -3,6 +3,8 @@
 
 frappe.ui.form.on("Work Order", {
 	refresh(frm) {
+		var doc = frm.doc;
+
         frm.set_query("custom_batch", function (doc) {
             if(!doc.production_item){
                 frappe.throw("Select Production Item First")
@@ -23,11 +25,11 @@ frappe.ui.form.on("Work Order", {
 			};
 		});
 
-		if(frm.doc.docstatus == 1 
-			&& !frm.doc.use_multi_level_bom 
-			&& frm.doc.custom_batch 
-			&& !frm.doc.custom_is_sub_assembly 
-			&& flt(frm.doc.custom_per_work_order) < 100
+		if(doc.docstatus == 1 
+			&& !doc.use_multi_level_bom 
+			&& doc.custom_batch 
+			&& !doc.custom_is_sub_assembly 
+			&& flt(doc.custom_per_work_order) < 100
 		) {
 			frm.add_custom_button(
 				__("Work Order for Sub Assembly"),
@@ -48,6 +50,32 @@ frappe.ui.form.on("Work Order", {
 								);
 								frm.refresh()
 							}
+						},
+					});
+				},
+				__("Create")
+			);
+		}
+
+		if(
+			doc.docstatus == 1 &&
+			flt(doc.produced_qty) >= flt(doc.qty)
+		) {
+			frm.add_custom_button(
+				__("Bahan Baku Sisa"),
+				function () {
+					frappe.call({
+						method: "cbn.cbn.custom.work_order.create_ste_item_return",
+						freeze: true,
+						args: {
+							work_order_id: doc.name,
+						},
+						callback: function (r) {
+							if(!r.message) return
+							var stock_entry = r.message
+
+							frappe.model.sync(stock_entry);
+							frappe.set_route("Form", stock_entry.doctype, stock_entry.name);
 						},
 					});
 				},

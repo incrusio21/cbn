@@ -107,6 +107,34 @@ def create_work_order(work_order):
 	return cr_wo
 
 @frappe.whitelist()
+def create_ste_item_return(work_order_id):
+	work_order = frappe.get_doc("Work Order", work_order_id)
+	if not frappe.db.get_value("Warehouse", work_order.source_warehouse, "is_group"):
+		source_warehouse = work_order.source_warehouse
+	else:
+		source_warehouse = None
+
+	stock_entry = frappe.new_doc("Stock Entry")
+	stock_entry.stock_entry_type = "Return of Remaining Goods"
+	stock_entry.work_order = work_order_id
+
+	stock_entry.to_warehouse = source_warehouse
+	for row in work_order.required_items:
+		# hanya item dengan perintah produksi yang dapat di return yang akan muncul
+		if not frappe.get_cached_value("Perintah Produksi", row.custom_perintah_produksi, "can_return") or row.custom_remaining_goods > row.transferred_qty:
+			continue
+		
+		item_dict = {
+			"item_code": row.item_code,
+			"qty": flt(row.transferred_qty - row.custom_remaining_goods),
+		}
+		stock_entry.add_to_stock_entry_detail({row.item_code: item_dict})
+		
+	stock_entry.set_purpose_for_stock_entry()
+
+	return stock_entry.as_dict()
+
+@frappe.whitelist()
 def make_stock_entry(work_order_id, purpose, qty=None, perintah_kerja=None):
 	work_order = frappe.get_doc("Work Order", work_order_id)
 	if not frappe.db.get_value("Warehouse", work_order.wip_warehouse, "is_group"):

@@ -7,6 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "disabled",
+  "can_return",
   "details"
  ],
  "fields": [
@@ -22,11 +23,17 @@
    "label": "Details",
    "options": "Perintah Produksi Item",
    "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "can_return",
+   "fieldtype": "Check",
+   "label": "Goods can be returned"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-10-30 13:14:09.290132",
+ "modified": "2024-11-01 10:05:57.371329",
  "modified_by": "Administrator",
  "module": "Cbn",
  "name": "Perintah Produksi",

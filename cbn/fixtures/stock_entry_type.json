@@ -1,0 +1,10 @@
+[
+ {
+  "add_to_transit": 0,
+  "docstatus": 0,
+  "doctype": "Stock Entry Type",
+  "modified": "2024-11-01 09:46:30.770918",
+  "name": "Return of Remaining Goods",
+  "purpose": "Material Receipt"
+ }
+]
