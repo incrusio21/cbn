@@ -147,7 +147,7 @@ doc_events = {
 	# 	"on_trash": "method"
 	# }
     "Work Order": {
-        "validate": ["cbn.cbn.custom.work_order.validate_batch_manufacture","cbn.cbn.custom.work_order.generate_custom_field_to_space"],
+        "validate": ["cbn.cbn.custom.work_order.validate_batch_manufacture"],
         "on_submit": ["cbn.cbn.custom.work_order.update_status_multi_level_bom","cbn.cbn.custom.work_order.update_or_add_sub_assembly_batch_manufacture"],
         "on_cancel": ["cbn.cbn.custom.work_order.update_status_multi_level_bom", "cbn.cbn.custom.work_order.update_or_add_sub_assembly_batch_manufacture"],
 	}
