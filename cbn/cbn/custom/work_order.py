@@ -25,13 +25,16 @@ def validate_batch_manufacture(self, method=None):
 	if self.custom_is_sub_assembly or not self.custom_batch:
 		return
 	
-	batch_mf = frappe.get_value("Batch Manufacture", self.custom_batch, ["item_code", "disabled", "status"], as_dict=1 ,for_update=1)
+	date = getdate(self.get("date"))
+	batch_mf = frappe.get_value("Batch Manufacture", self.custom_batch, ["item_code", "disabled", "status", "month", "tahun"], as_dict=1 ,for_update=1)
 	if batch_mf.disabled:
 		frappe.throw("Batch {} disabled".format(self.custom_batch))
 	elif batch_mf.item_code != self.production_item:
 		frappe.throw("Batch {} cannot be used to Item {}".format(self.custom_batch, self.production_item))
 	elif batch_mf.status != "Empty":
 		frappe.throw("Batch {} already {}".format(self.custom_batch, batch_mf.status))
+	elif date.month != batch_mf.month and date.year != batch_mf.tahun:
+		frappe.throw("Batch {} hanya bisa digunakan pada bulan {} di tahun {}".format(batch_mf.month, batch_mf.tahun))
 
 def update_or_add_sub_assembly_batch_manufacture(self, method=None):
 	if not self.custom_batch:
