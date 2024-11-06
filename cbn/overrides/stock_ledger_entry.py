@@ -10,7 +10,7 @@ class StockLedgerEntry(StockLedgerEntry):
      def on_submit(self):
         super().on_submit()
 
-        if not self.get("via_landed_cost_voucher") and self.custom_batch:
+        if not self.get("via_landed_cost_voucher"):
             BatchManufacture(
 				sle=self,
 				item_code=self.item_code,

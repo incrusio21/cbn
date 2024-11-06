@@ -34,7 +34,7 @@ def validate_batch_manufacture(self, method=None):
 	elif batch_mf.status != "Empty":
 		frappe.throw("Batch {} already {}".format(self.custom_batch, batch_mf.status))
 	elif date.month != batch_mf.month and date.year != batch_mf.tahun:
-		frappe.throw("Batch {} hanya bisa digunakan pada bulan {} di tahun {}".format(batch_mf.month, batch_mf.tahun))
+		frappe.throw("Batch {} can only be used in {} {}.".format(batch_mf.month, batch_mf.tahun))
 
 def update_or_add_sub_assembly_batch_manufacture(self, method=None):
 	if not self.custom_batch:
@@ -133,6 +133,38 @@ def create_ste_item_return(work_order_id):
 		}
 		stock_entry.add_to_stock_entry_detail({row.item_code: item_dict})
 		
+	stock_entry.set_purpose_for_stock_entry()
+
+	return stock_entry.as_dict()
+
+@frappe.whitelist()
+def create_manufacture_conversion_uom(work_order_id):
+	work_order = frappe.get_doc("Work Order", work_order_id)
+
+	stock_entry = frappe.new_doc("Stock Entry")
+	stock_entry.stock_entry_type = "Manufacture Conversion"
+	stock_entry.work_order = work_order_id
+	stock_entry.custom_batch = work_order.custom_batch
+
+	item_dict = {
+		"item_code": work_order.production_item,
+		"qty": flt(work_order.produced_qty - work_order.process_loss_qty - work_order.custom_converted_qty),
+		"from_warehouse": work_order.fg_warehouse,
+		"custom_batch": work_order.custom_batch
+	}
+
+	stock_entry.add_to_stock_entry_detail({ work_order.production_item: item_dict })
+	
+	all_uom_item = frappe.get_list("Item", filters={"custom_item_parent": work_order.production_item}, fields=["name"])
+	for uom_item in all_uom_item:
+		item_dict = {
+			"item_code": uom_item.name,
+			"qty": 1,
+			"custom_batch": work_order.custom_batch
+		}
+
+		stock_entry.add_to_stock_entry_detail({ work_order.production_item: item_dict })
+
 	stock_entry.set_purpose_for_stock_entry()
 
 	return stock_entry.as_dict()

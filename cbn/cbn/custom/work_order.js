@@ -82,6 +82,33 @@ frappe.ui.form.on("Work Order", {
 				__("Create")
 			);
 		}
+		
+
+		if(
+			doc.docstatus == 1 &&
+			flt(doc.produced_qty - doc.process_loss_qty) >= flt(doc.custom_converted_qty)
+		) {
+			frm.add_custom_button(
+				__("Conversion Uom Manufacture"),
+				function () {
+					frappe.call({
+						method: "cbn.cbn.custom.work_order.create_manufacture_conversion_uom",
+						freeze: true,
+						args: {
+							work_order_id: doc.name,
+						},
+						callback: function (r) {
+							if(!r.message) return
+							var stock_entry = r.message
+
+							frappe.model.sync(stock_entry);
+							frappe.set_route("Form", stock_entry.doctype, stock_entry.name);
+						},
+					});
+				},
+				__("Create")
+			);
+		}
 	},
 });
 

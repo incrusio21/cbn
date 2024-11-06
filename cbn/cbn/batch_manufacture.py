@@ -17,6 +17,9 @@ class BatchManufacture:
             setattr(self, key, value)
 
         self.set_item_details()
+        if not self.item_details.custom_has_batch_manufacture:
+            return
+        
         self.process_batch_manufacture()
         self.validate_batch_inventory()
 
@@ -24,25 +27,26 @@ class BatchManufacture:
     
     def process_batch_manufacture(self):
         bm_setting = frappe.get_cached_doc("Batch Manufacture Settings")
-        self.item_type = ("Production" if self.item_details.item_group == bm_setting.proc_item_group 
-		else "Sub Assembly" if self.item_details.item_group == bm_setting.sa_item_group 
-		else frappe.throw("The Item Group {} is neither a production item nor a sub-assembly.".format(self.item_details.item_group)))
+        self.item_type = ("Conversion" if self.item_details.custom_item_parent 
+        else "Production" if self.item_details.item_group == bm_setting.proc_item_group 
+        else "Sub Assembly" if self.item_details.item_group == bm_setting.sa_item_group 
+        else frappe.throw("The Item Group {} is neither a production item nor a sub-assembly.".format(self.item_details.item_group)))
 
     def set_item_details(self):
         fields = [
-            "has_batch_no",
-            "has_serial_no",
             "item_name",
             "item_group",
-            "serial_no_series",
-            "create_new_batch",
-            "batch_number_series",
+            "custom_item_parent",
+            "custom_has_batch_manufacture"
         ]
 
         self.item_details = frappe.get_cached_value("Item", self.sle.item_code, fields, as_dict=1)
 
-    def validate_batch_inventory(self):
+    def validate_batch_inventory(self):       
         batch_manufacture = self.sle.custom_batch
+        if not self.sle.custom_batch:
+            frappe.throw("Please Select Batch Manufacture for Item {}".format(self.self.item_code))
+
         available_batches = get_auto_batch_manufacture(
             frappe._dict(
                 {
@@ -77,10 +81,8 @@ class BatchManufacture:
             frappe.throw(_(msg), BatchNegativeStockError)
                
     def post_process(self):
-        if not self.sle.custom_batch:
-            return
-        
-        self.update_batch_qty()
+        if self.item_details.custom_has_batch_manufacture:
+            self.update_batch_qty()
           
     def update_batch_qty(self):
         batch_no = self.sle.custom_batch
@@ -95,6 +97,7 @@ class BatchManufacture:
         condition = {
 			"Production": ["Batch Manufacture", batch_no],
 			"Sub Assembly": ["Batch Manufacture Sub Assembly", {"parent": batch_no, "item_code": self.sle.item_code}],
+            "Conversion": ["Batch Manufacture Conversion", {"parent": batch_no, "item_code": self.sle.item_code}]
 		}.get(self.item_type)
 
         if not condition:

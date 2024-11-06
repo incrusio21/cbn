@@ -29,9 +29,10 @@ app_license = "mit"
 
 # include js in doctype views
 doctype_js = {
-    "Work Order" : "cbn/custom/work_order.js",
-    "Sales Order" : "cbn/custom/sales_order.js",
+    "Item" : "cbn/custom/item.js",
     "Delivery Note" : "cbn/custom/delivery_note.js",
+    "Sales Order" : "cbn/custom/sales_order.js",
+    "Work Order" : "cbn/custom/work_order.js",
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -74,7 +75,7 @@ fixtures = [
         "filters": [
         	[
 				"name", "in", [
-                    "Return of Remaining Goods"
+                    "Return of Remaining Goods", "Manufacture Conversion"
 				]
 			]
     	]
@@ -146,14 +147,17 @@ doc_events = {
 	# 	"on_cancel": "method",
 	# 	"on_trash": "method"
 	# }
+    "Item": {
+		"validate": "cbn.cbn.custom.item.validate_item_parent"
+	},
+    "Quality Inspection": {
+        "validate": "cbn.cbn.custom.quality_inspection.set_job_card_bm"
+	},
     "Work Order": {
         "validate": ["cbn.cbn.custom.work_order.validate_batch_manufacture"],
         "on_submit": ["cbn.cbn.custom.work_order.update_status_multi_level_bom","cbn.cbn.custom.work_order.update_or_add_sub_assembly_batch_manufacture"],
         "on_cancel": ["cbn.cbn.custom.work_order.update_status_multi_level_bom", "cbn.cbn.custom.work_order.update_or_add_sub_assembly_batch_manufacture"],
 	},
-    "Quality Inspection": {
-        "validate": "cbn.cbn.custom.quality_inspection.set_job_card_bm"
-	}
 }
 
 # Scheduled Tasks

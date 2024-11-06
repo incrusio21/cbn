@@ -75,8 +75,37 @@ class WorkOrder(WorkOrder):
 
             # update in bin
             self.update_reserved_qty_for_production()
+            self.update_converted_qty_for_production()
             self.update_returned_raw_material()
     
+    def update_converted_qty_for_production(self):
+        ste = frappe.qb.DocType("Stock Entry")
+        ste_child = frappe.qb.DocType("Stock Entry Detail")
+
+        query = (
+            frappe.qb.from_(ste)
+            .inner_join(ste_child)
+            .on(ste_child.parent == ste.name)
+            .select(
+                ste_child.item_code,
+                ste_child.original_item,
+                fn.Sum(ste_child.qty).as_("qty"),
+            )
+            .where(
+                (ste.docstatus == 1)
+                & (ste.work_order == self.name)
+                & (ste_child.item_code == self.production_item)
+                & (ste_child.s_warehouse.isnotnull())
+                & (ste_child.t_warehouse.isnull())
+                & (ste.stock_entry_type == "Manufacture Conversion")
+            )
+            .groupby(ste_child.item_code)
+        )
+
+        data = query.run(as_dict=1) or []
+        transferred_items = frappe._dict({d.original_item or d.item_code: d.qty for d in data})
+        self.db_set("custom_converted_qty", (transferred_items.get(self.production_item) or 0.0), update_modified=False)
+
     def update_transferred_qty_for_required_items(self):
         ste = frappe.qb.DocType("Stock Entry")
         ste_child = frappe.qb.DocType("Stock Entry Detail")

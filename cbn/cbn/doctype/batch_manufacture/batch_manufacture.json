@@ -18,7 +18,9 @@
   "description",
   "status",
   "sub_assembly_tab",
-  "sub_assembly"
+  "sub_assembly",
+  "item_conversion_tab",
+  "item_conversion"
  ],
  "fields": [
   {
@@ -97,11 +99,23 @@
    "fieldtype": "Int",
    "label": "Tahun",
    "read_only": 1
+  },
+  {
+   "fieldname": "item_conversion_tab",
+   "fieldtype": "Tab Break",
+   "label": "Item Conversion"
+  },
+  {
+   "fieldname": "item_conversion",
+   "fieldtype": "Table",
+   "label": "Item Conversion",
+   "options": "Batch Manufacture Conversion",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-10-30 11:24:50.316899",
+ "modified": "2024-11-06 13:48:37.892456",
  "modified_by": "Administrator",
  "module": "Cbn",
  "name": "Batch Manufacture",

@@ -155,9 +155,7 @@ def batch_manufacture_query(doctype, txt, searchfield, start, page_len, filters,
                 join += """ join `tabBatch Manufacture Sub Assembly` on `tabBatch Manufacture Sub Assembly`.parent = `tabBatch Manufacture`.name """
             elif bm_setting.proc_item_group != filters.get("item_group"):
                 return []
-
-            filters["batch_qty"] = [">", 0]
-            
+    
             del filters["item_group"]
         else:
             filters.pop("item_group", None)
@@ -170,6 +168,14 @@ def batch_manufacture_query(doctype, txt, searchfield, start, page_len, filters,
             del filters["date"]
         else:
             filters.pop("date", None)
+
+        if filters.get("item_code") and \
+            doctype == "Batch Manufacture" and \
+            frappe.get_cached_value("Item", filters["item_code"], "custom_is_item_conversion"):
+            doctype = "Batch Manufacture Conversion"
+            join += """ join `tabBatch Manufacture Conversion` on `tabBatch Manufacture Conversion`.parent = `tabBatch Manufacture`.name """
+
+    filters["batch_qty"] = [">", 0]
 
     description_cond = ""
     if frappe.db.count(doctype, cache=True) < 50000:

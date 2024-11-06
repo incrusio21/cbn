@@ -15,6 +15,8 @@ class BatchManufacture(Document):
 		
 def on_doctype_update():
 	frappe.db.add_unique("Batch Manufacture Sub Assembly", ["item_code", "parent"], constraint_name="unique_item_parent")
+	frappe.db.add_unique("Batch Manufacture Conversion", ["item_code", "parent"], constraint_name="unique_item_parent")
+	
 
 def get_auto_batch_manufacture(kwargs):
 	available_batches = get_available_batches(kwargs)

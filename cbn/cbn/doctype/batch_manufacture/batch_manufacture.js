@@ -6,7 +6,7 @@ frappe.ui.form.on("Batch Manufacture", {
         frm.set_query("item_code", function (doc) {
 			return {
                 query: "cbn.controllers.queries.item_query",
-                filters: { is_production: 1 },
+                filters: { is_production: 1, custom_is_item_conversion: 0, disabled: 0 },
 			};
 		});
 	},
