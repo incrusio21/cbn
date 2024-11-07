@@ -19,9 +19,9 @@ class StockEntry(StockEntry):
         self.update_or_add_conversion_batch_manufacture()
 
     def update_or_add_conversion_batch_manufacture(self):
-        if self.stock_entry_type not in ["Manufacture Conversion"]:
+        if self.stock_entry_type not in ["Manufacture Conversion"] or not self.custom_batch:
             return
-        
+
         for item in self.get("items"):
             if item.is_finished_item:
                 add_conversion = "add_conversion"
