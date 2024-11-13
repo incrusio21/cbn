@@ -31,6 +31,7 @@ app_license = "mit"
 doctype_js = {
     "Item" : "cbn/custom/item.js",
     "Delivery Note" : "cbn/custom/delivery_note.js",
+    "Job Card" : "cbn/custom/job_card.js",
     "Sales Order" : "cbn/custom/sales_order.js",
     "Work Order" : "cbn/custom/work_order.js",
 }
