@@ -19,6 +19,7 @@ def get_job_card(job_card):
         .inner_join(wo)
         .on(jc.work_order == wo.name)
         .select(
+            jc.operation,
             jc.actual_start_date,
             jc.actual_end_date,
             wo.qty,
