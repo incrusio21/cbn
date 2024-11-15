@@ -25,8 +25,9 @@ def get_job_card(job_card):
             wo.custom_line_produksi,
         )
         .where(jc.name == job_card)
+        .limit(1)
     )
 
     data = query.run(as_dict=True)
 
-    return data
+    return data[0] if data else {}
