@@ -33,6 +33,7 @@ doctype_js = {
     "Delivery Note" : "cbn/custom/delivery_note.js",
     "Job Card" : "cbn/custom/job_card.js",
     "Sales Order" : "cbn/custom/sales_order.js",
+    "Quality Inspection" : "cbn/custom/quality_inspection.js",
     "Work Order" : "cbn/custom/work_order.js",
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
