@@ -133,6 +133,15 @@ class WorkOrder(WorkOrder):
         
         transfered_percent = []
         for row in self.required_items:
+            if (transferred_items.get(row.item_code) or 0.0) > row.required_qty:
+                frappe.throw(
+                    "This transaction cannot be completed because {0} units of {1} exceed the limit of {2}.".format(
+                        flt(transferred_items.get(row.item_code) - row.required_qty),
+                        frappe.get_desk_link("Item", row.item_code),
+                        frappe.get_desk_link("Work Order", self.name),
+                    )        
+                )
+
             row.db_set(
                 "transferred_qty", (transferred_items.get(row.item_code) or 0.0), update_modified=False
             )
