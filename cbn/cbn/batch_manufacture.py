@@ -45,7 +45,7 @@ class BatchManufacture:
     def validate_batch_inventory(self):       
         batch_manufacture = self.sle.custom_batch
         if not self.sle.custom_batch:
-            frappe.throw("Please Select Batch Manufacture for Item {}".format(self.self.item_code))
+            frappe.throw("Please Select Batch Manufacture for Item {}".format(self.item_code))
 
         available_batches = get_auto_batch_manufacture(
             frappe._dict(

@@ -52,7 +52,8 @@ class StockEntry(StockEntry):
 
         item_list = {}
         for d in self.items:
-            item_list.setdefault(d.original_item or d.item_code, frappe.get_value("Work Order Item", {"parent": self.work_order }, "required_qty") or 0.0)
+            key = d.original_item or d.item_code
+            item_list.setdefault(key, frappe.get_value("Work Order Item", {"parent": self.work_order, "item_code": key }, "required_qty") or 0.0)
 
         query = (
             frappe.qb.from_(ste)
@@ -74,6 +75,7 @@ class StockEntry(StockEntry):
 
         data = query.run(as_dict=1) or []
         transferred_items = frappe._dict({d.original_item or d.item_code: d.qty for d in data})
+        
         for item_code, qty in item_list.items(): 
             if (transferred_items.get(item_code) or 0.0) > qty:
                 frappe.throw(
