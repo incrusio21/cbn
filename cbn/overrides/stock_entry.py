@@ -2,6 +2,7 @@
 # License: GNU General Public License v3. See license.txt
 
 from collections import defaultdict
+from pypika import functions as fn
 
 import frappe
 from frappe import _
@@ -15,6 +16,9 @@ from erpnext.manufacturing.doctype.bom.bom import add_additional_cost
 from erpnext.stock.doctype.stock_entry.stock_entry import FinishedGoodError, StockEntry, get_available_materials
 
 class StockEntry(StockEntry):
+    def on_update(self):
+        self.validate_work_order_transferred_qty_for_required_items()
+
     def before_submit(self):
         self.update_or_add_conversion_batch_manufacture()
 
@@ -36,6 +40,49 @@ class StockEntry(StockEntry):
                 except frappe.UniqueValidationError:
                     frappe.message_log.pop()
                     frappe.db.rollback(save_point=add_conversion)
+
+    def validate_work_order_transferred_qty_for_required_items(self):
+        if self.purpose not in (
+            "Material Transfer for Manufacture",
+        ):
+            return
+        
+        ste = frappe.qb.DocType("Stock Entry")
+        ste_child = frappe.qb.DocType("Stock Entry Detail")
+
+        item_list = {}
+        for d in self.items:
+            item_list.setdefault(d.original_item or d.item_code, frappe.get_value("Work Order Item", {"parent": self.work_order }, "required_qty") or 0.0)
+
+        query = (
+            frappe.qb.from_(ste)
+            .inner_join(ste_child)
+            .on(ste_child.parent == ste.name)
+            .select(
+                ste_child.item_code,
+                ste_child.original_item,
+                fn.Sum(ste_child.qty).as_("qty"),
+            )
+            .where(
+                (ste.docstatus < 2)
+                & (ste.work_order == self.work_order)
+                & (ste.purpose == "Material Transfer for Manufacture")
+                & (ste.is_return == 0)
+            )
+            .groupby(ste_child.item_code)
+        )
+
+        data = query.run(as_dict=1) or []
+        transferred_items = frappe._dict({d.original_item or d.item_code: d.qty for d in data})
+        for item_code, qty in item_list.items(): 
+            if (transferred_items.get(item_code) or 0.0) > qty:
+                frappe.throw(
+                    "This transaction cannot be completed because {0} units of {1} exceed the limit of {2}.".format(
+                        flt(transferred_items.get(item_code) - qty),
+                        frappe.get_desk_link("Item", item_code),
+                        frappe.get_desk_link("Work Order", self.work_order),
+                    )        
+                )
 
 
     def validate_work_order(self):
