@@ -78,6 +78,44 @@ class WorkOrder(WorkOrder):
             self.update_converted_qty_for_production()
             self.update_returned_raw_material()
     
+    def update_consumed_qty_for_required_items(self):
+        """
+        Update consumed qty from submitted stock entries
+        against a work order for each stock item
+        """
+
+        for item in self.required_items:
+            consumed_qty = frappe.db.sql(
+                """
+                SELECT
+                    SUM(detail.qty)
+                FROM
+                    `tabStock Entry` entry,
+                    `tabStock Entry Detail` detail
+                WHERE
+                    entry.work_order = %(name)s
+                        AND (entry.purpose = "Material Consumption for Manufacture"
+                            OR entry.purpose = "Manufacture")
+                        AND entry.docstatus = 1
+                        AND detail.parent = entry.name
+                        AND detail.s_warehouse IS NOT null
+                        AND (detail.item_code = %(item)s
+                            OR detail.original_item = %(item)s)
+                """,
+                {"name": self.name, "item": item.item_code},
+            )[0][0]
+
+            if (flt(consumed_qty) or 0.0) > item.required_qty:
+                frappe.throw(
+                    "This transaction cannot be completed because {0} units of {1} exceed the limit of {2}.".format(
+                        flt(consumed_qty - item.required_qty),
+                        frappe.get_desk_link("Item", item.item_code),
+                        frappe.get_desk_link("Work Order", self.work_order),
+                    )        
+                )
+
+            item.db_set("consumed_qty", flt(consumed_qty), update_modified=False)
+
     def update_converted_qty_for_production(self):
         ste = frappe.qb.DocType("Stock Entry")
         ste_child = frappe.qb.DocType("Stock Entry Detail")
