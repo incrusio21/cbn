@@ -17,9 +17,9 @@ def validate_item_parent(self, method):
     if not self.custom_item_parent and self.is_new():
         return
     
-    # jika sudah memiliki batch manufacture, item tidak boleh menjadi item conversion
-    if self.custom_is_item_conversion and frappe.db.exists("Batch Manufacture", {"item_code": self.name }):
-        frappe.throw("Item {} already has a Batch Manufacture.".format(self.name))
+    # # jika sudah memiliki batch manufacture, item tidak boleh menjadi item conversion
+    # if self.custom_is_item_conversion and frappe.db.exists("Batch Manufacture", {"item_code": self.name }):
+    #     frappe.throw("Item {} cannot be Item Conversion as it has an existing batch manufacture.".format(self.name))
 
     previous = self.get_doc_before_save()
     
