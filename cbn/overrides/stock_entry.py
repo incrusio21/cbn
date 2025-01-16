@@ -86,7 +86,6 @@ class StockEntry(StockEntry):
                     )        
                 )
 
-
     def validate_work_order(self):
         if self.purpose in (
             "Manufacture",

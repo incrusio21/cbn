@@ -134,6 +134,7 @@ fixtures = [
 # Override standard doctype classes
 
 override_doctype_class = {
+	"Item": "cbn.overrides.item.Item",
 	"Stock Entry": "cbn.overrides.stock_entry.StockEntry",
 	"Stock Ledger Entry": "cbn.overrides.stock_ledger_entry.StockLedgerEntry",
 	"Work Order": "cbn.overrides.work_order.WorkOrder",
