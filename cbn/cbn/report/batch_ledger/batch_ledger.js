@@ -34,14 +34,26 @@ frappe.query_reports["Batch Ledger"] = {
 			// reqd: 1,
 		},
 		{
+			fieldname: "warehouse_type",
+			label: __("Warehouse Type"),
+			fieldtype: "Link",
+			options: "Warehouse Type",
+		},
+		{
 			fieldname: "warehouse",
 			label: __("Warehouse"),
 			fieldtype: "Link",
 			options: "Warehouse",
 			get_query: function () {
 				const company = frappe.query_report.get_filter_value("company");
+				const w_type = frappe.query_report.get_filter_value("warehouse_type");
+				filters = { company: company }
+				if(w_type){
+					filters["warehouse_type"] = w_type
+				}
+
 				return {
-					filters: { company: company },
+					filters: filters
 				};
 			},
 		},
