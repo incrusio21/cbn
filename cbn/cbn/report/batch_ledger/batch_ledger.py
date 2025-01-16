@@ -3,7 +3,7 @@
 
 import frappe
 from frappe import _, _dict
-from frappe.query_builder.functions import CombineDatetime, Sum
+from frappe.query_builder.functions import CombineDatetime, IfNull, Sum
 
 from erpnext.stock.doctype.warehouse.warehouse import apply_warehouse_filter
 from erpnext.stock.doctype.inventory_dimension.inventory_dimension import get_inventory_dimensions
@@ -65,6 +65,13 @@ def execute(filters=None):
 def get_columns(filters):
 	columns = [
 		{"label": _("Date"), "fieldname": "date", "fieldtype": "Datetime", "width": 150},
+		{
+			"label": _("Batch"), 
+			"fieldname": "custom_batch", 
+			"fieldtype": "Link", 
+			"options": "Batch Manufacture",
+			"width": 150
+		},
 		{
 			"label": _("Item"),
 			"fieldname": "item_code",
@@ -214,14 +221,16 @@ def get_stock_ledger_entries(filters, items):
 
 	if filters.get("batch"):
 		query = query.where(sle.custom_batch == filters.batch)
+	else:
+		query = query.where(IfNull(sle.custom_batch, "") != "")
 
 	query = apply_warehouse_filter(query, sle, filters)
 
-	return query.run(as_dict=True)
+	return query.run(as_dict=True, debug=1)
 
 def get_opening_balance_from_batch(filters, columns, sl_entries):
 	query_filters = {
-		"custom_batch": filters.batch,
+		"custom_batch": filters.batch or ["is", "not set"],
 		"docstatus": 1,
 		"is_cancelled": 0,
 		"posting_date": ("<", filters.from_date),
@@ -236,7 +245,8 @@ def get_opening_balance_from_batch(filters, columns, sl_entries):
 		"Stock Ledger Entry",
 		fields=["item_code", "warehouse","sum(actual_qty) as qty_after_transaction", "sum(stock_value_difference) as stock_value"],
 		filters=query_filters,
-		group_by="item_code, warehouse"
+		group_by="item_code, warehouse",
+		debug=1
 	)
 
 def get_item_details(items, sl_entries, include_uom):

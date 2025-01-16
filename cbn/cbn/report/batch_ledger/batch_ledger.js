@@ -31,7 +31,7 @@ frappe.query_reports["Batch Ledger"] = {
 			label: __("Batch"),
 			fieldtype: "Link",
 			options: "Batch Manufacture",
-			reqd: 1,
+			// reqd: 1,
 		},
 		{
 			fieldname: "warehouse",
