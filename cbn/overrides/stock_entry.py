@@ -81,8 +81,8 @@ class StockEntry(StockEntry):
         work_order: DF.Link | None
     # end: auto-generated types
     
-    def on_update(self):
-        self.validate_work_order_transferred_qty_for_required_items()
+    # def on_update(self):
+    #     self.validate_work_order_transferred_qty_for_required_items()
 
     def before_submit(self):
         self.update_or_add_conversion_batch_manufacture()
