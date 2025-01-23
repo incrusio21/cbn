@@ -59,7 +59,7 @@ frappe.ui.form.on("Work Order", {
 
 		if(
 			doc.docstatus == 1 &&
-			flt(doc.produced_qty) >= flt(doc.qty)
+			flt(doc.produced_qty + doc.process_loss_qty) >= flt(doc.qty)
 		) {
 			frm.add_custom_button(
 				__("Bahan Baku Sisa"),
