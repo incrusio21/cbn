@@ -289,7 +289,42 @@ class StockEntry(StockEntry):
                         flt(self.fg_completed_qty), allowed_qty
                     )
                 )
-                                                            
+
+    def set_process_loss_qty(self):
+        if self.purpose not in ("Manufacture", "Repack") or self.stock_entry_type in ["Manufacture Conversion"]:
+            return
+
+        precision = self.precision("process_loss_qty")
+        if self.work_order:
+            data = frappe.get_all(
+                "Work Order Operation",
+                filters={"parent": self.work_order},
+                fields=["max(process_loss_qty) as process_loss_qty"],
+            )
+
+            if data and data[0].process_loss_qty is not None:
+                process_loss_qty = data[0].process_loss_qty
+                if flt(self.process_loss_qty, precision) != flt(process_loss_qty, precision):
+                    self.process_loss_qty = flt(process_loss_qty, precision)
+
+                    frappe.msgprint(
+                        _("The Process Loss Qty has reset as per job cards Process Loss Qty"), alert=True
+                    )
+
+        if not self.process_loss_percentage and not self.process_loss_qty:
+            self.process_loss_percentage = frappe.get_cached_value(
+                "BOM", self.bom_no, "process_loss_percentage"
+            )
+
+        if self.process_loss_percentage and not self.process_loss_qty:
+            self.process_loss_qty = flt(
+                (flt(self.fg_completed_qty) * flt(self.process_loss_percentage)) / 100
+            )
+        elif self.process_loss_qty and not self.process_loss_percentage:
+            self.process_loss_percentage = flt(
+                (flt(self.process_loss_qty) / flt(self.fg_completed_qty)) * 100
+            )
+
     def get_pending_raw_materials(self, backflush_based_on=None):
         """
         issue (item quantity) that is pending to issue or desire to transfer,
