@@ -36,7 +36,6 @@ class WorkOrder(WorkOrder):
                         d.operation = operation
             else:
                 for item in sorted(item_dict.values(), key=lambda d: d["idx"] or float("inf")):
-                    perintah_produksi = frappe.get_cached_value("Perintah Produksi Item", {"item_group": item.item_group}, "parent")
                     self.append(
                         "required_items",
                         {
@@ -51,7 +50,8 @@ class WorkOrder(WorkOrder):
                             "source_warehouse": item.source_warehouse or item.default_warehouse,
                             "include_item_in_manufacturing": item.include_item_in_manufacturing,
                             "custom_bom": item.bom_no,
-                            "custom_perintah_produksi": perintah_produksi
+                            "custom_perintah_produksi": item.get("perintah_produksi") or \
+                                frappe.get_cached_value("Perintah Produksi Item", {"item_group": item.item_group}, "parent")
                         },
                     )
 

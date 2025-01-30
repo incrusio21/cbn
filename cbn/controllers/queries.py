@@ -214,3 +214,68 @@ def batch_manufacture_query(doctype, txt, searchfield, start, page_len, filters,
         as_dict=as_dict,
         debug=1
     )
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def perintah_produksi_query(doctype, txt, searchfield, start, page_len, filters, as_dict=False):
+    doctype = "Perintah Produksi"
+    conditions = []
+
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+
+    # Get searchfields from meta and use in Item Link field query
+    meta = frappe.get_meta(doctype, cached=True)
+    searchfields = meta.get_search_fields()
+
+    columns = ""
+
+    searchfields = searchfields + [
+        field
+        for field in [searchfield or "name"]
+        if field not in searchfields
+    ]
+    searchfields = " or ".join([f"`tab{doctype}`." + field + " like %(txt)s" for field in searchfields])
+
+    if filters and isinstance(filters, dict):
+        if filters.get("item"):
+            item_group = frappe.get_cached_value("Item", filters.get("item"), "item_group")
+            if not item_group:
+                frappe.throw("Item doesn't have Item Group")
+
+            filters["item_group"] = item_group
+
+            del filters["item"]
+        else:
+            filters.pop("item", None)
+
+    description_cond = ""
+
+    return frappe.db.sql(
+        """select
+            `tabPerintah Produksi`.name {columns}
+        from `tabPerintah Produksi`
+        join `tabPerintah Produksi Item` on `tabPerintah Produksi Item`.parent = `tabPerintah Produksi`.name
+        where `tabPerintah Produksi`.docstatus < 2
+            and `tabPerintah Produksi`.disabled=0
+            and {scond}
+            {fcond} {mcond}
+        order by
+            if(locate(%(_txt)s, `tabPerintah Produksi`.name), locate(%(_txt)s, `tabPerintah Produksi`.name), 99999),
+            name
+        limit %(start)s, %(page_len)s """.format(
+            columns=columns,
+            scond=searchfields,
+            fcond=get_filters_cond("Perintah Produksi Item", filters, conditions).replace("%", "%%"),
+            mcond=get_match_cond(doctype).replace("%", "%%"),
+            description_cond=description_cond,
+        ),
+        {
+            "today": nowdate(),
+            "txt": "%%%s%%" % txt,
+            "_txt": txt.replace("%", ""),
+            "start": start,
+            "page_len": page_len,
+        },
+        as_dict=as_dict,
+    )
