@@ -14,6 +14,9 @@ from erpnext.stock.stock_ledger import (
 	is_negative_stock_allowed, is_negative_with_precision,
 	validate_reserved_stock
 )
+from erpnext.stock.doctype.serial_and_batch_bundle.serial_and_batch_bundle import (
+	get_type_of_transaction,
+)
 
 from frappe.utils import (
 	add_days,
@@ -67,7 +70,61 @@ def get_sl_entries(self, d, args):
 				sl_dict[field] = d.get(field)
 
 	return sl_dict
+    
+def update_bundle_details(self, bundle_details, table_name, row, is_rejected=False):
+    from erpnext.stock.doctype.serial_no.serial_no import get_serial_nos
 
+    # Since qty field is different for different doctypes
+    qty = row.get("qty")
+    warehouse = row.get("warehouse")
+
+    if table_name == "packed_items":
+        type_of_transaction = "Inward"
+        if not self.is_return:
+            type_of_transaction = "Outward"
+    elif table_name == "supplied_items":
+        qty = row.consumed_qty
+        warehouse = self.supplier_warehouse
+        type_of_transaction = "Outward"
+        if self.is_return:
+            type_of_transaction = "Inward"
+    else:
+        type_of_transaction = get_type_of_transaction(self, row)
+
+    if hasattr(row, "stock_qty"):
+        qty = row.stock_qty
+
+    if self.doctype == "Stock Entry":
+        qty = row.transfer_qty
+        warehouse = row.s_warehouse or row.t_warehouse
+
+    serial_nos = row.serial_no
+    if is_rejected:
+        serial_nos = row.get("rejected_serial_no")
+        type_of_transaction = "Inward" if not self.is_return else "Outward"
+        qty = flt(row.get("rejected_qty") * (row.conversion_factor or 1.0))
+        warehouse = row.get("rejected_warehouse")
+
+    if (
+        self.is_internal_transfer()
+        and self.doctype in ["Sales Invoice", "Delivery Note"]
+        and self.is_return
+    ):
+        warehouse = row.get("target_warehouse") or row.get("warehouse")
+        type_of_transaction = "Outward"
+
+    bundle_details.update(
+        {
+            "qty": qty,
+            "is_rejected": is_rejected,
+            "type_of_transaction": type_of_transaction,
+            "warehouse": warehouse,
+            "batches": frappe._dict({row.batch_no: qty}) if row.batch_no else None,
+            "serial_nos": get_serial_nos(serial_nos) if serial_nos else None,
+            "batch_no": row.batch_no,
+        }
+    )
+          
 def validate_negative_qty_in_future_sle(args, allow_negative_stock=False):
 	if allow_negative_stock or is_negative_stock_allowed(item_code=args.item_code):
 		return
@@ -189,5 +246,6 @@ def custom_get_overlap_for(self, args, open_job_cards=None):
 
 
 StockController.get_sl_entries = get_sl_entries
-stock_ledger.validate_negative_qty_in_future_sle = validate_negative_qty_in_future_sle
+StockController.update_bundle_details = update_bundle_details
 JobCard.get_overlap_for = custom_get_overlap_for
+stock_ledger.validate_negative_qty_in_future_sle = validate_negative_qty_in_future_sle
