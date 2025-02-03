@@ -2,6 +2,7 @@ __version__ = "0.0.1"
 
 import frappe
 from frappe import _
+from frappe.model.meta import get_field_precision
 from frappe.utils.data import flt
 
 from erpnext.accounts.utils import get_fiscal_year
@@ -31,46 +32,48 @@ from frappe.utils import (
 	time_diff_in_hours,
 	time_diff_in_seconds,
 )
+
+import erpnext
+from erpnext.controllers import sales_and_purchase_return
 from erpnext.manufacturing.doctype.job_card.job_card import JobCard, OverlapError
 
 def get_sl_entries(self, d, args):
-	sl_dict = frappe._dict(
-		{
-			"item_code": d.get("item_code", None),
-			"warehouse": d.get("warehouse", None),
-			"serial_and_batch_bundle": d.get("serial_and_batch_bundle"),
-			"custom_batch": d.get("custom_batch"),
-			"posting_date": self.posting_date,
-			"posting_time": self.posting_time,
-			"fiscal_year": get_fiscal_year(self.posting_date, company=self.company)[0],
-			"voucher_type": self.doctype,
-			"voucher_no": self.name,
-			"voucher_detail_no": d.name,
-			"actual_qty": (self.docstatus == 1 and 1 or -1) * flt(d.get("stock_qty")),
-			"stock_uom": frappe.get_cached_value(
-				"Item", args.get("item_code") or d.get("item_code"), "stock_uom"
-			),
-			"incoming_rate": 0,
-			"company": self.company,
-			"project": d.get("project") or self.get("project"),
-			"is_cancelled": 1 if self.docstatus == 2 else 0,
-		}
-	)
+    sl_dict = frappe._dict(
+        {
+            "item_code": d.get("item_code", None),
+            "warehouse": d.get("warehouse", None),
+            "serial_and_batch_bundle": d.get("serial_and_batch_bundle"),
+            "custom_batch": d.get("custom_batch"),
+            "posting_date": self.posting_date,
+            "posting_time": self.posting_time,
+            "fiscal_year": get_fiscal_year(self.posting_date, company=self.company)[0],
+            "voucher_type": self.doctype,
+            "voucher_no": self.name,
+            "voucher_detail_no": d.name,
+            "actual_qty": (self.docstatus == 1 and 1 or -1) * flt(d.get("stock_qty")),
+            "stock_uom": frappe.get_cached_value(
+                "Item", args.get("item_code") or d.get("item_code"), "stock_uom"
+            ),
+            "incoming_rate": 0,
+            "company": self.company,
+            "project": d.get("project") or self.get("project"),
+            "is_cancelled": 1 if self.docstatus == 2 else 0,
+        }
+    )
 
-	if d.get("item_row") and d.item_row.get("custom_batch"):
-		sl_dict.update({"custom_batch": d.item_row.custom_batch })
+    if d.get("item_row") and d.item_row.get("custom_batch"):
+        sl_dict.update({"custom_batch": d.item_row.custom_batch })
 
-	sl_dict.update(args)
-	self.update_inventory_dimensions(d, sl_dict)
+    sl_dict.update(args)
+    self.update_inventory_dimensions(d, sl_dict)
 
-	if self.docstatus == 2:
-		# To handle denormalized serial no records, will br deprecated in v16
-		for field in ["serial_no", "batch_no"]:
-			if d.get(field):
-				sl_dict[field] = d.get(field)
+    if self.docstatus == 2:
+        # To handle denormalized serial no records, will br deprecated in v16
+        for field in ["serial_no", "batch_no"]:
+            if d.get(field):
+                sl_dict[field] = d.get(field)
 
-	return sl_dict
-    
+    return sl_dict
 def update_bundle_details(self, bundle_details, table_name, row, is_rejected=False):
     from erpnext.stock.doctype.serial_no.serial_no import get_serial_nos
 
@@ -244,8 +247,56 @@ def custom_get_overlap_for(self, args, open_job_cards=None):
 
 	return time_logs[0]
 
+def validate_quantity(doc, args, ref, valid_items, already_returned_items):
+	fields = ["stock_qty"]
+	if doc.doctype in ["Purchase Receipt", "Purchase Invoice", "Subcontracting Receipt"]:
+		if not args.get("return_qty_from_rejected_warehouse"):
+			fields.extend(["received_qty", "rejected_qty"])
+		else:
+			fields = ["received_qty"]
 
+	already_returned_data = already_returned_items.get(args.item_code) or {}
+
+	company_currency = erpnext.get_company_currency(doc.company)
+	stock_qty_precision = get_field_precision(
+		frappe.get_meta(doc.doctype + " Item").get_field("stock_qty"), company_currency
+	)
+
+	for column in fields:
+		returned_qty = flt(already_returned_data.get(column, 0)) if len(already_returned_data) > 0 else 0
+
+		if column == "stock_qty" and not args.get("return_qty_from_rejected_warehouse"):
+			reference_qty = ref.get(column)
+			current_stock_qty = args.get(column)
+		elif args.get("return_qty_from_rejected_warehouse"):
+			reference_qty = ref.get("rejected_qty") * ref.get("conversion_factor", 1.0)
+			current_stock_qty = args.get(column) * args.get("conversion_factor", 1.0)
+		else:
+			reference_qty = ref.get(column) * ref.get("conversion_factor", 1.0)
+			current_stock_qty = args.get(column) * args.get("conversion_factor", 1.0)
+
+		
+		max_returnable_qty = flt(reference_qty, stock_qty_precision) - returned_qty
+		label = column.replace("_", " ").title()
+
+		
+		if reference_qty:
+			if flt(args.get(column)) > 0:
+				frappe.throw(_("{0} must be negative in return document").format(label))
+			elif returned_qty >= reference_qty and args.get(column):
+				frappe.throw(
+					_("Item {0} has already been returned").format(args.item_code), sales_and_purchase_return.StockOverReturnError
+				)
+			elif abs(flt(current_stock_qty, stock_qty_precision)) > max_returnable_qty:
+				frappe.throw(
+					_("Row # {0}: Cannot return more than {1} for Item {2}").format(
+						args.idx, max_returnable_qty, args.item_code
+					),
+					sales_and_purchase_return.StockOverReturnError,
+				)
+				
 StockController.get_sl_entries = get_sl_entries
 StockController.update_bundle_details = update_bundle_details
 JobCard.get_overlap_for = custom_get_overlap_for
 stock_ledger.validate_negative_qty_in_future_sle = validate_negative_qty_in_future_sle
+sales_and_purchase_return.validate_quantit = validate_quantity
