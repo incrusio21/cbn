@@ -8,6 +8,9 @@
  "field_order": [
   "disabled",
   "can_return",
+  "column_break_dovt",
+  "formula",
+  "section_break_iwvz",
   "details"
  ],
  "fields": [
@@ -29,11 +32,25 @@
    "fieldname": "can_return",
    "fieldtype": "Check",
    "label": "Goods can be returned"
+  },
+  {
+   "fieldname": "column_break_dovt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Enter a valid formula using numbers, +, -, *, /, (), and . Used for dynamic quantity calculation.",
+   "fieldname": "formula",
+   "fieldtype": "Data",
+   "label": "Formula"
+  },
+  {
+   "fieldname": "section_break_iwvz",
+   "fieldtype": "Section Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-11-01 10:05:57.371329",
+ "modified": "2025-02-05 17:01:38.026781",
  "modified_by": "Administrator",
  "module": "Cbn",
  "name": "Perintah Produksi",

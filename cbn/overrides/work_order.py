@@ -36,6 +36,15 @@ class WorkOrder(WorkOrder):
                         d.operation = operation
             else:
                 for item in sorted(item_dict.values(), key=lambda d: d["idx"] or float("inf")):
+                    pp_name = item.get("perintah_produksi") or \
+                        frappe.get_value("Perintah Produksi Item", {"item_group": item.item_group}, "parent", order_by="is_default desc")
+                    
+                    perintah_produksi = frappe.get_cached_value("Perintah Produksi", pp_name, ["formula"], as_dict=1) 
+
+                    item_qty = item.qty
+                    if perintah_produksi and perintah_produksi.formula:
+                        item_qty = item.qty * eval(perintah_produksi.formula)
+
                     self.append(
                         "required_items",
                         {
@@ -46,12 +55,11 @@ class WorkOrder(WorkOrder):
                             "item_name": item.item_name,
                             "description": item.description,
                             "allow_alternative_item": item.allow_alternative_item,
-                            "required_qty": item.qty,
+                            "required_qty": item_qty,
                             "source_warehouse": item.source_warehouse or item.default_warehouse,
                             "include_item_in_manufacturing": item.include_item_in_manufacturing,
                             "custom_bom": item.bom_no,
-                            "custom_perintah_produksi": item.get("perintah_produksi") or \
-                                frappe.get_cached_value("Perintah Produksi Item", {"item_group": item.item_group}, "parent")
+                            "custom_perintah_produksi": pp_name
                         },
                     )
 
