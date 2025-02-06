@@ -37,7 +37,11 @@ class WorkOrder(WorkOrder):
             else:
                 for item in sorted(item_dict.values(), key=lambda d: d["idx"] or float("inf")):
                     pp_name = item.get("perintah_produksi") or \
-                        frappe.get_value("Perintah Produksi Item", {"item_group": item.item_group}, "parent", order_by="is_default desc")
+                        frappe.cache.hget(
+                            "perintah_produksi_group:",
+                            item.item_group,
+                            lambda: frappe.get_value("Perintah Produksi Item", {"item_group": item.item_group}, "parent", order_by="is_default desc"),
+                        )
                     
                     perintah_produksi = frappe.get_cached_value("Perintah Produksi", pp_name, ["formula"], as_dict=1) 
 
@@ -118,7 +122,7 @@ class WorkOrder(WorkOrder):
                     "This transaction cannot be completed because {0} units of {1} exceed the limit of {2}.".format(
                         flt(consumed_qty - item.required_qty),
                         frappe.get_desk_link("Item", item.item_code),
-                        frappe.get_desk_link("Work Order", self.work_order),
+                        frappe.get_desk_link("Work Order", self.name),
                     )        
                 )
 
@@ -266,3 +270,6 @@ class WorkOrder(WorkOrder):
         if self.production_plan:
             self.set_produced_qty_for_sub_assembly_item()
             self.update_production_plan_status()
+
+def get_doctype_map(doctype, name, filters=None, order_by=None):
+	return 
