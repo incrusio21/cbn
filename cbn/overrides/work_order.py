@@ -117,10 +117,10 @@ class WorkOrder(WorkOrder):
                 {"name": self.name, "item": item.item_code},
             )[0][0]
 
-            if (flt(consumed_qty) or 0.0) > item.required_qty:
+            if (flt(consumed_qty) or 0.0) > item.transferred_qty:
                 frappe.throw(
                     "This transaction cannot be completed because {0} units of {1} exceed the limit of {2}.".format(
-                        flt(consumed_qty - item.required_qty),
+                        flt(consumed_qty - item.transferred_qty),
                         frappe.get_desk_link("Item", item.item_code),
                         frappe.get_desk_link("Work Order", self.name),
                     )        
