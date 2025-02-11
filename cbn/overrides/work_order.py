@@ -191,8 +191,10 @@ class WorkOrder(WorkOrder):
             transfered_percent.append(transfer/row.required_qty)
 
         if self.custom_use_perintah_produksi:
+            min_trans = min(transfered_percent)
+            adjusted_trans = 1 if min_trans > 0.9 else min_trans
             self.db_set("material_transferred_for_manufacturing", 
-                flt(min(transfered_percent) * self.qty, self.precision("material_transferred_for_manufacturing"))
+                flt(adjusted_trans * self.qty, self.precision("material_transferred_for_manufacturing"))
             )
 
     def update_returned_raw_material(self):
