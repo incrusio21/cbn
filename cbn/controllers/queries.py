@@ -2,10 +2,13 @@
 # License: GNU General Public License v3. See license.txt
 
 import json
+from collections import OrderedDict
+from pypika import functions as fn
 
 import frappe
 from frappe import scrub
 from frappe.desk.reportview import get_filters_cond, get_match_cond
+from frappe.query_builder.functions import IfNull
 from frappe.utils import getdate, nowdate
 
 @frappe.whitelist()
@@ -279,3 +282,77 @@ def perintah_produksi_query(doctype, txt, searchfield, start, page_len, filters,
         },
         as_dict=as_dict,
     )
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def get_batch_no(doctype, txt, searchfield, start, page_len, filters):
+    doctype = "Batch"
+    meta = frappe.get_meta(doctype, cached=True)
+    searchfields = meta.get_search_fields()
+    page_len = 30
+
+    from erpnext.controllers.queries import (
+        get_batches_from_stock_ledger_entries, get_batches_from_serial_and_batch_bundle,
+        get_empty_batches
+    )
+
+    batches = get_batches_from_stock_ledger_entries(searchfields, txt, filters, start, page_len)
+    batches.extend(get_batches_from_serial_and_batch_bundle(searchfields, txt, filters, start, page_len))
+
+    filtered_batches = get_filterd_batches(batches, filters)
+
+    if filters.get("is_inward"):
+        filtered_batches.extend(get_empty_batches(filters, start, page_len, filtered_batches, txt))
+
+    return filtered_batches
+
+def get_ste_draft(batches, batch_no, filters):
+    warehouse = filters.get("warehouse")
+    parent = filters.get("parent")
+    
+    sted = frappe.qb.DocType("Stock Entry Detail")
+
+    query = (
+        frappe.qb.from_(sted)
+        .select(
+            sted.batch_no,
+            sted.s_warehouse,
+            sted.t_warehouse,
+            sted.parent,
+            fn.Sum(sted.qty).as_("actual_qty"),
+        )
+        .where(
+            (sted.docstatus < 1)
+            & (sted.parent != parent)
+            & (sted.batch_no.isin(batch_no))
+            & ((sted.s_warehouse == warehouse) | (sted.t_warehouse == warehouse))
+        )
+        .groupby(sted.batch_no, sted.parent)
+    )
+
+    for d in query.run(as_dict=True):
+        # item_map = iwb_map.setdefault(d.item_code, {})
+        if d.s_warehouse and d.s_warehouse == warehouse:
+            batches[d.batch_no][1] -= d.actual_qty
+
+        if d.t_warehouse and d.t_warehouse == warehouse:
+            batches[d.batch_no][1] += d.actual_qty
+               
+def get_filterd_batches(data, filters):
+    batches = OrderedDict()
+
+    for batch_data in data:
+        if batch_data[0] not in batches:
+            batches[batch_data[0]] = list(batch_data)
+        else:
+            batches[batch_data[0]][1] += batch_data[1]
+
+    if batches:
+        get_ste_draft(batches, list(batches.keys()), filters)
+    
+    filterd_batch = []
+    for _batch, batch_data in batches.items():
+        if batch_data[1] > 0:
+            filterd_batch.append(tuple(batch_data))
+
+    return filterd_batch

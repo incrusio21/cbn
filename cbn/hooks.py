@@ -34,6 +34,7 @@ doctype_js = {
     "Delivery Note" : "cbn/custom/delivery_note.js",
     "Job Card" : "cbn/custom/job_card.js",
     "Sales Order" : "cbn/custom/sales_order.js",
+    "Stock Entry" : "cbn/custom/stock_entry.js",
     "Quality Inspection" : "cbn/custom/quality_inspection.js",
     "Work Order" : "cbn/custom/work_order.js",
 }
