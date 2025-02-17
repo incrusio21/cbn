@@ -137,7 +137,7 @@ fixtures = [
 override_doctype_class = {
 	"BOM": "cbn.overrides.bom.BOM",
 	"Item": "cbn.overrides.item.Item",
-	"Quality Inspection": "cbn.overrides.quality_inspection.QualityInspection",
+	# "Quality Inspection": "cbn.overrides.quality_inspection.QualityInspection",
 	"Stock Entry": "cbn.overrides.stock_entry.StockEntry",
 	"Stock Ledger Entry": "cbn.overrides.stock_ledger_entry.StockLedgerEntry",
 	"Work Order": "cbn.overrides.work_order.WorkOrder",
@@ -156,9 +156,9 @@ doc_events = {
     "Item": {
 		"validate": "cbn.cbn.custom.item.validate_item_parent"
 	},
-    "Stock Entry": {
-        "validate": "cbn.cbn.custom.stock_entry.remove_qa_not_in_items"
-    },
+    # "Stock Entry": {
+    #     "validate": "cbn.cbn.custom.stock_entry.remove_qa_not_in_items"
+    # },
     "Quality Inspection": {
         "validate": "cbn.cbn.custom.quality_inspection.set_job_card_bm"
 	},
