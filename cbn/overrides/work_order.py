@@ -29,8 +29,14 @@ class WorkOrder(WorkOrder):
 
             if reset_only_qty:
                 for d in self.get("required_items"):
-                    if item_dict.get(d.item_code):
-                        d.required_qty = item_dict.get(d.item_code).get("qty")
+                    if item_dict.get(d.item_code, d.custom_perintah_produksi):
+                        perintah_produksi = frappe.get_cached_value("Perintah Produksi", d.custom_perintah_produksi, ["formula"], as_dict=1) 
+
+                        item_qty = item_dict.get(d.item_code, d.custom_perintah_produksi).get("qty")
+                        if perintah_produksi and perintah_produksi.formula:
+                            item_qty = item_qty * eval(perintah_produksi.formula)
+
+                        d.required_qty = item_qty
 
                     if not d.operation:
                         d.operation = operation
