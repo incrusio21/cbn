@@ -119,8 +119,10 @@ class WorkOrder(WorkOrder):
                         AND detail.s_warehouse IS NOT null
                         AND (detail.item_code = %(item)s
                             OR detail.original_item = %(item)s)
+                        AND (detail.name = %(detail_name)s
+                            OR ifnull(detail.name, "") == "")
                 """,
-                {"name": self.name, "item": item.item_code},
+                {"name": self.name, "item": item.item_code, "detail_name": item.name},
             )[0][0]
 
             if (flt(consumed_qty) or 0.0) > item.transferred_qty:
