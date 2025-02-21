@@ -29,10 +29,10 @@ class WorkOrder(WorkOrder):
 
             if reset_only_qty:
                 for d in self.get("required_items"):
-                    if item_dict.get(d.item_code, d.custom_perintah_produksi):
+                    if item_dict.get((d.item_code, d.custom_perintah_produksi)):
                         perintah_produksi = frappe.get_cached_value("Perintah Produksi", d.custom_perintah_produksi, ["formula"], as_dict=1) 
 
-                        item_qty = item_dict.get(d.item_code, d.custom_perintah_produksi).get("qty")
+                        item_qty = item_dict.get((d.item_code, d.custom_perintah_produksi)).get("qty")
                         if perintah_produksi and perintah_produksi.formula:
                             item_qty = item_qty * eval(perintah_produksi.formula)
 
@@ -123,7 +123,7 @@ class WorkOrder(WorkOrder):
                 {"name": self.name, "item": item.item_code},
             )[0][0]
 
-            if (flt(consumed_qty) or 0.0) > item.transferred_qty:
+            if (flt(consumed_qty) or 0.0) > (flt(item.transferred_qty) or 0.0):
                 frappe.throw(
                     "This transaction cannot be completed because {0} units of {1} exceed the limit of {2}.".format(
                         flt(consumed_qty - item.transferred_qty),
@@ -171,6 +171,7 @@ class WorkOrder(WorkOrder):
             .inner_join(ste_child)
             .on(ste_child.parent == ste.name)
             .select(
+                ste.custom_perintah_produksi,
                 ste_child.item_code,
                 ste_child.original_item,
                 fn.Sum(ste_child.qty).as_("qty"),
@@ -181,16 +182,16 @@ class WorkOrder(WorkOrder):
                 & (ste.purpose == "Material Transfer for Manufacture")
                 & (ste.is_return == 0)
             )
-            .groupby(ste_child.item_code)
+            .groupby(ste_child.item_code, ste.custom_perintah_produksi)
         )
 
         data = query.run(as_dict=1) or []
-        transferred_items = frappe._dict({d.original_item or d.item_code: d.qty for d in data})
+        transferred_items = frappe._dict({(d.original_item or d.item_code, d.custom_perintah_produksi): d.qty for d in data})
         
         transfered_percent = []
         for row in self.required_items:
             row.db_set(
-                "transferred_qty", (transferred_items.get(row.item_code) or 0.0), update_modified=False
+                "transferred_qty", (transferred_items.get((row.item_code, row.custom_perintah_produksi)) or 0.0), update_modified=False
             )
             
             transfer = row.transferred_qty if row.transferred_qty <= row.required_qty else row.required_qty

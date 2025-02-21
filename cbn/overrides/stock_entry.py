@@ -194,7 +194,8 @@ class StockEntry(StockEntry):
                     frappe.throw(_("For Quantity (Manufactured Qty) is mandatory"))
                 self.check_if_operations_completed()
                 self.check_duplicate_entry_for_work_order()
-        elif self.purpose != "Material Transfer" and self.stock_entry_type not in ("Return of Remaining Goods", "Manufacture Conversion"):
+        elif self.purpose != "Material Transfer" and \
+            self.stock_entry_type not in ("Return of Remaining Goods", "Manufacture Conversion", "BK Pengganti Reject", "BK Reject", "BK Sisa"):
             self.work_order = None
 
     def validate_batch(self):
