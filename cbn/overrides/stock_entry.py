@@ -376,7 +376,46 @@ class StockEntry(StockEntry):
             frappe.msgprint(_("""All items have already been transferred for this Work Order."""))
 
         return item_dict
-                            
+
+    def get_unconsumed_raw_materials(self):
+        wo = frappe.get_doc("Work Order", self.work_order)
+        wo_items = frappe.get_all(
+            "Work Order Item",
+            filters={"parent": self.work_order},
+            fields=["name", "item_code", "source_warehouse", "required_qty", "consumed_qty", "transferred_qty"],
+        )
+
+        work_order_qty = wo.material_transferred_for_manufacturing or wo.qty
+        for item in wo_items:
+            item_account_details = get_item_defaults(item.item_code, self.company)
+            # Take into account consumption if there are any.
+
+            wo_item_qty = item.transferred_qty or item.required_qty
+
+            wo_qty_consumed = flt(wo_item_qty) - flt(item.consumed_qty)
+            wo_qty_to_produce = flt(work_order_qty) - flt(wo.produced_qty)
+
+            req_qty_each = (wo_qty_consumed) / (wo_qty_to_produce or 1)
+
+            qty = req_qty_each * flt(self.fg_completed_qty)
+
+            if qty > 0:
+                self.add_to_stock_entry_detail(
+                    {
+                        item.item_code: {
+                            "from_warehouse": wo.wip_warehouse or item.source_warehouse,
+                            "to_warehouse": "",
+                            "qty": qty,
+                            "item_name": item.item_name,
+                            "description": item.description,
+                            "stock_uom": item_account_details.stock_uom,
+                            "expense_account": item_account_details.get("expense_account"),
+                            "cost_center": item_account_details.get("buying_cost_center"),
+                            "wo_detail": item.name
+                        }
+                    }
+                )
+
     def load_items_from_bom(self):
         custom_batch = None
         if self.work_order:
@@ -515,7 +554,8 @@ class StockEntry(StockEntry):
                 "use_serial_batch_fields",
                 "batch_no",
                 "serial_no",
-                "custom_batch"
+                "custom_batch",
+                "wo_detail"
             ]:
                 if item_row.get(field):
                     se_child.set(field, item_row.get(field))
