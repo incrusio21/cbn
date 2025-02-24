@@ -81,8 +81,8 @@ class StockEntry(StockEntry):
         work_order: DF.Link | None
     # end: auto-generated types
     
-    # def on_update(self):
-    #     self.validate_work_order_transferred_qty_for_required_items()
+    def on_update(self):
+        self.validate_work_order_transferred_qty_for_required_items()
 
     def before_submit(self):
         self.update_or_add_conversion_batch_manufacture()
@@ -112,44 +112,53 @@ class StockEntry(StockEntry):
         ):
             return
         
-        ste = frappe.qb.DocType("Stock Entry")
-        ste_child = frappe.qb.DocType("Stock Entry Detail")
+        # ste = frappe.qb.DocType("Stock Entry")
+        # ste_child = frappe.qb.DocType("Stock Entry Detail")
 
-        item_list = {}
+        items = frappe.get_value("Work Order Item", {"parent": self.work_order }, "item_code")
+                         
+        # item_list = {}
         for d in self.items:
             key = d.original_item or d.item_code
-            item_list.setdefault(key, frappe.get_value("Work Order Item", {"parent": self.work_order, "item_code": key }, "required_qty") or 0.0)
-
-        query = (
-            frappe.qb.from_(ste)
-            .inner_join(ste_child)
-            .on(ste_child.parent == ste.name)
-            .select(
-                ste_child.item_code,
-                ste_child.original_item,
-                fn.Sum(ste_child.qty).as_("qty"),
-            )
-            .where(
-                (ste.docstatus < 2)
-                & (ste.work_order == self.work_order)
-                & (ste.purpose == "Material Transfer for Manufacture")
-                & (ste.is_return == 0)
-            )
-            .groupby(ste_child.item_code)
-        )
-
-        data = query.run(as_dict=1) or []
-        transferred_items = frappe._dict({d.original_item or d.item_code: d.qty for d in data})
-        
-        for item_code, qty in item_list.items(): 
-            if (transferred_items.get(item_code) or 0.0) > qty:
+            if key not in items:
                 frappe.throw(
-                    "This transaction cannot be completed because {0} units of {1} exceed the limit of {2}.".format(
-                        flt(transferred_items.get(item_code) - qty),
-                        frappe.get_desk_link("Item", item_code),
+                    "This transaction cannot be completed because Item {0} not in Work Order {1}.".format(
+                        frappe.get_desk_link("Item", key),
                         frappe.get_desk_link("Work Order", self.work_order),
                     )        
                 )
+            # item_list.setdefault(key, frappe.get_value("Work Order Item", {"parent": self.work_order, "item_code": key }, "required_qty") or 0.0)
+
+        # query = (
+        #     frappe.qb.from_(ste)
+        #     .inner_join(ste_child)
+        #     .on(ste_child.parent == ste.name)
+        #     .select(
+        #         ste_child.item_code,
+        #         ste_child.original_item,
+        #         fn.Sum(ste_child.qty).as_("qty"),
+        #     )
+        #     .where(
+        #         (ste.docstatus < 2)
+        #         & (ste.work_order == self.work_order)
+        #         & (ste.purpose == "Material Transfer for Manufacture")
+        #         & (ste.is_return == 0)
+        #     )
+        #     .groupby(ste_child.item_code)
+        # )
+
+        # data = query.run(as_dict=1) or []
+        # transferred_items = frappe._dict({d.original_item or d.item_code: d.qty for d in data})
+        
+        # for item_code, qty in item_list.items(): 
+        #     if (transferred_items.get(item_code) or 0.0) > qty:
+        #         frappe.throw(
+        #             "This transaction cannot be completed because {0} units of {1} exceed the limit of {2}.".format(
+        #                 flt(transferred_items.get(item_code) - qty),
+        #                 frappe.get_desk_link("Item", item_code),
+        #                 frappe.get_desk_link("Work Order", self.work_order),
+        #             )        
+        #         )
 
     def validate_fg_completed_qty(self):
         item_wise_qty = {}
