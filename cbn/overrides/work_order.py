@@ -190,8 +190,9 @@ class WorkOrder(WorkOrder):
         data = query.run(as_dict=1) or []
         transferred_items = {}
         for d in data:
-            req_item = transferred_items.setdefault((d.original_item or d.item_code, d.custom_perintah_produksi), 0)
-            req_item += d.qty
+            key = (d.original_item or d.item_code, d.custom_perintah_produksi)
+            transferred_items.setdefault(key, 0)
+            transferred_items[key] += d.qty
 
         transfered_percent = []
         for row in self.required_items:
