@@ -188,14 +188,17 @@ class WorkOrder(WorkOrder):
         )
 
         data = query.run(as_dict=1) or []
-        transferred_items = frappe._dict({(d.original_item or d.item_code, d.custom_perintah_produksi): d.qty for d in data})
-        
+        transferred_items = {}
+        for d in data:
+            req_item = transferred_items.setdefault((d.original_item or d.item_code, d.custom_perintah_produksi), 0)
+            req_item += d.qty
+
         transfered_percent = []
         for row in self.required_items:
             row.db_set(
-                "transferred_qty", (transferred_items.get((row.item_code, row.custom_perintah_produksi)) or 0.0), update_modified=False
+                "transferred_qty", flt(transferred_items.get((row.item_code, row.custom_perintah_produksi)) or 0.0, row.precision("transferred_qty")), update_modified=False
             )
-            
+
             transfer = row.transferred_qty if row.transferred_qty <= row.required_qty else row.required_qty
             transfered_percent.append(transfer/row.required_qty)
 
