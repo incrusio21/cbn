@@ -12,6 +12,9 @@ class BatchManufacture(Document):
 		td = now_datetime()
 		self.bulan = td.month
 		self.tahun = td.year
+	
+	def before_insert(self):
+		self.status = "Empty"
 		
 def get_auto_batch_manufacture(kwargs):
 	available_batches = get_available_batches(kwargs)

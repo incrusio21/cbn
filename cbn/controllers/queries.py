@@ -172,13 +172,13 @@ def batch_manufacture_query(doctype, txt, searchfield, start, page_len, filters,
         else:
             filters.pop("date", None)
 
-        if filters.get("item_code") and \
-            doctype == "Batch Manufacture" and \
-            frappe.get_cached_value("Item", filters["item_code"], "custom_is_item_conversion"):
-            doctype = "Batch Manufacture Conversion"
-            join += """ join `tabBatch Manufacture Conversion` on `tabBatch Manufacture Conversion`.parent = `tabBatch Manufacture`.name """
+        # if filters.get("item_code") and \
+        #     doctype == "Batch Manufacture" and \
+        #     frappe.get_cached_value("Item", filters["item_code"], "custom_is_item_conversion"):
+        #     doctype = "Batch Manufacture Conversion"
+        #     join += """ join `tabBatch Manufacture Conversion` on `tabBatch Manufacture Conversion`.parent = `tabBatch Manufacture`.name """
 
-    filters["batch_qty"] = [">", 0]
+    # filters["batch_qty"] = [">", 0]
 
     description_cond = ""
     if frappe.db.count(doctype, cache=True) < 50000:

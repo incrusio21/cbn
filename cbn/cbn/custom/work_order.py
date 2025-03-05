@@ -12,7 +12,7 @@ def generate_custom_field_to_space(self, method=None):
 				item[fn] = "."
 
 def validate_batch_manufacture(self, method=None):
-	if self.custom_is_sub_assembly or not self.custom_batch:
+	if self.custom_is_sub_assembly or self.production_plan or not self.custom_batch:
 		return
 	
 	date = getdate(self.get("date"))

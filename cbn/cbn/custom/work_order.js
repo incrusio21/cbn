@@ -18,7 +18,6 @@ frappe.ui.form.on("Work Order", {
 				query: "cbn.controllers.queries.batch_manufacture_query",
 				filters: {
                     item_code: doc.production_item,
-					disabled: 0,
                     status: "Empty",
 					date: doc.custom_date,
 				},

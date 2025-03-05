@@ -35,6 +35,7 @@ doctype_js = {
     "Job Card" : "cbn/custom/job_card.js",
     "Sales Order" : "cbn/custom/sales_order.js",
     "Stock Entry" : "cbn/custom/stock_entry.js",
+	"Production Plan": "cbn/custom/production_plan.js",
     "Quality Inspection" : "cbn/custom/quality_inspection.js",
     "Work Order" : "cbn/custom/work_order.js",
 }
@@ -139,6 +140,7 @@ override_doctype_class = {
 	"BOM": "cbn.overrides.bom.BOM",
 	"Item": "cbn.overrides.item.Item",
 	# "Quality Inspection": "cbn.overrides.quality_inspection.QualityInspection",
+	"Production Plan": "cbn.overrides.production_plan.ProductionPlan",
 	"Stock Entry": "cbn.overrides.stock_entry.StockEntry",
 	"Stock Ledger Entry": "cbn.overrides.stock_ledger_entry.StockLedgerEntry",
 	"Work Order": "cbn.overrides.work_order.WorkOrder",
@@ -160,6 +162,10 @@ doc_events = {
     # "Stock Entry": {
     #     "validate": "cbn.cbn.custom.stock_entry.remove_qa_not_in_items"
     # },
+    "Production Plan": {
+        "on_submit": ["cbn.cbn.custom.production_plan.update_batch_manufacture", "cbn.cbn.custom.production_plan.add_conversion_batch_manufacture"],
+        "on_cancel": ["cbn.cbn.custom.production_plan.update_batch_manufacture"],
+	},
     "Quality Inspection": {
         "validate": "cbn.cbn.custom.quality_inspection.set_job_card_bm"
 	},
