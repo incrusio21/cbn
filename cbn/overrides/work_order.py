@@ -102,39 +102,51 @@ class WorkOrder(WorkOrder):
         against a work order for each stock item
         """
 
+        item_consumend = {}
         for item in self.required_items:
-            consumed_qty = frappe.db.sql(
-                """
-                SELECT
-                    SUM(detail.qty)
-                FROM
-                    `tabStock Entry` entry,
-                    `tabStock Entry Detail` detail
-                WHERE
-                    entry.work_order = %(name)s
-                        AND (entry.purpose = "Material Consumption for Manufacture"
-                            OR entry.purpose = "Manufacture")
-                        AND entry.docstatus = 1
-                        AND detail.parent = entry.name
-                        AND detail.s_warehouse IS NOT null
-                        AND (detail.item_code = %(item)s
-                            OR detail.original_item = %(item)s)
-                        AND (detail.name = %(detail_name)s
-                            OR ifnull(detail.name, "") = "")
-                """,
-                {"name": self.name, "item": item.item_code, "detail_name": item.name},
-            )[0][0]
+            # set item yang belum ada pada dict
+            if not item_consumend.get(item.item_code): 
+                consumed_qty = frappe.db.sql(
+                    """
+                    SELECT
+                        SUM(detail.qty)
+                    FROM
+                        `tabStock Entry` entry,
+                        `tabStock Entry Detail` detail
+                    WHERE
+                        entry.work_order = %(name)s
+                            AND (entry.purpose = "Material Consumption for Manufacture"
+                                OR entry.purpose = "Manufacture")
+                            AND entry.docstatus = 1
+                            AND detail.parent = entry.name
+                            AND detail.s_warehouse IS NOT null
+                            AND (detail.item_code = %(item)s
+                                OR detail.original_item = %(item)s)
+                    """,
+                    {"name": self.name, "item": item.item_code},
+                )[0][0]
 
-            if (flt(consumed_qty) or 0.0) > (flt(item.transferred_qty) or 0.0):
+                item_consumend.setdefault(item.item_code, (flt(consumed_qty) or 0.0))
+            
+            # jika item yang d konsumsi lebih besar dari transfer maka konsumsi barang sama dengan barang yang di kirim
+            item_to_consumed = item.transferred_qty if item_consumend[item.item_code] > (flt(item.transferred_qty) or 0.0) else item_consumend[item.item_code]
+            item.db_set("consumed_qty", item_to_consumed, update_modified=False)
+
+            # kurangi jumlah barang yang di konsumsi untuk item yang sama
+            item_consumend[item.item_code] -= (flt(item.consumed_qty) or 0.0)
+
+        for item, consumed in item_consumend.items():
+            # memastikan tidak ada barang yang konsumsi lebih besar dari barang yang d transfer
+            if (flt(consumed) or 0.0) > 0:
                 frappe.throw(
                     "This transaction cannot be completed because {0} units of {1} exceed the limit of {2}.".format(
-                        flt(consumed_qty - item.transferred_qty),
+                        flt(consumed),
                         frappe.get_desk_link("Item", item.item_code),
                         frappe.get_desk_link("Work Order", self.name),
                     )        
                 )
 
-            item.db_set("consumed_qty", flt(consumed_qty), update_modified=False)
+            # item.db_set("consumed_qty", flt(consumed_qty), update_modified=False)
 
     def update_converted_qty_for_production(self):
         ste = frappe.qb.DocType("Stock Entry")
@@ -192,11 +204,12 @@ class WorkOrder(WorkOrder):
         for d in data:
             req_item = transferred_items.setdefault((d.original_item or d.item_code, d.custom_perintah_produksi), 0)
             req_item += d.qty
-
+        
         transfered_percent = []
+        precision = frappe.get_precision('Work Order Item', "transferred_qty")
         for row in self.required_items:
             row.db_set(
-                "transferred_qty", flt(transferred_items.get((row.item_code, row.custom_perintah_produksi)) or 0.0, row.precision("transferred_qty")), update_modified=False
+                "transferred_qty", flt(transferred_items.get((row.item_code, row.custom_perintah_produksi)) or 0.0, precision), update_modified=False
             )
 
             transfer = row.transferred_qty if row.transferred_qty <= row.required_qty else row.required_qty
