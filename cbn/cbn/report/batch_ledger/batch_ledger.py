@@ -27,7 +27,7 @@ def execute(filters=None):
 	
 	item_list = {}
 	for row in opening_row:
-		key = tuple([row.item_code, row.warehouse])
+		key = tuple([row.item_code, row.custom_batch, row.warehouse])
 		item_list.setdefault(key, _dict({
 			"qty_after_transaction": row.qty_after_transaction,
 			"stock_value": row.stock_value
@@ -38,7 +38,7 @@ def execute(filters=None):
 
 		sle.update(item_detail)
 		
-		key = tuple([sle.item_code, sle.warehouse])
+		key = tuple([sle.item_code, sle.custom_batch, sle.warehouse])
 		item = item_list.get(key)
 		if not item:
 			item = item_list.setdefault(key, _dict({
@@ -226,11 +226,11 @@ def get_stock_ledger_entries(filters, items):
 
 	query = apply_warehouse_filter(query, sle, filters)
 
-	return query.run(as_dict=True, debug=1)
+	return query.run(as_dict=True)
 
 def get_opening_balance_from_batch(filters, columns, sl_entries):
 	query_filters = {
-		"custom_batch": filters.batch or ["is", "not set"],
+		"custom_batch": filters.batch or ["is", "set"],
 		"docstatus": 1,
 		"is_cancelled": 0,
 		"posting_date": ("<", filters.from_date),
@@ -243,10 +243,9 @@ def get_opening_balance_from_batch(filters, columns, sl_entries):
 
 	return frappe.get_all(
 		"Stock Ledger Entry",
-		fields=["item_code", "warehouse","sum(actual_qty) as qty_after_transaction", "sum(stock_value_difference) as stock_value"],
+		fields=["item_code", "custom_batch", "warehouse","sum(actual_qty) as qty_after_transaction", "sum(stock_value_difference) as stock_value"],
 		filters=query_filters,
-		group_by="item_code, warehouse",
-		debug=1
+		group_by="item_code, custom_batch, warehouse"
 	)
 
 def get_item_details(items, sl_entries, include_uom):

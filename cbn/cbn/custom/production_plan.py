@@ -15,6 +15,9 @@ def add_conversion_batch_manufacture(self, method=None):
         return
 
     for item in self.get("po_items"):
+        if item.item_code == self.item_master:
+            continue
+
         item_parent = frappe.get_cached_value("Item", item.item_code, "custom_item_parent")
         if item_parent != self.item_master:
             frappe.throw("Item {} does not belong to item {}". format(item.code, self.batch_manufacture))

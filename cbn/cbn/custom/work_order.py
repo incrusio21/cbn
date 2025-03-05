@@ -174,6 +174,8 @@ def make_stock_entry(work_order_id, purpose, qty=None, perintah_kerja=None):
 	stock_entry.company = work_order.company
 	stock_entry.from_bom = 1
 	stock_entry.custom_perintah_produksi = perintah_kerja
+	stock_entry.custom_planned_start_date = work_order.planned_start_date
+	stock_entry.custom_planned_end_date = work_order.planned_end_date
 	stock_entry.bom_no = work_order.bom_no
 	stock_entry.use_multi_level_bom = work_order.use_multi_level_bom
 	# accept 0 qty as well

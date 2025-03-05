@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:batch_id",
  "creation": "2024-10-04 12:51:53.445501",
@@ -115,7 +116,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-11-06 13:48:37.892456",
+ "modified": "2025-01-17 09:37:58.163464",
  "modified_by": "Administrator",
  "module": "Cbn",
  "name": "Batch Manufacture",

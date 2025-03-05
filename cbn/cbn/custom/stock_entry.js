@@ -48,7 +48,7 @@ frappe.ui.form.on("Stock Entry", {
                 query = "erpnext.controllers.queries.get_batch_no"
                 if(["Material Transfer for Manufacture"].includes(doc.purpose)){
                     query = "cbn.controllers.queries.get_batch_no"
-                    filters["parent"] = item.parent
+                    filters["detail_name"] = item.name
                 }
 
 				return {
@@ -59,3 +59,49 @@ frappe.ui.form.on("Stock Entry", {
 		});
     }
 })
+
+cur_frm.cscript.work_order = () => {
+	var me = this;
+	this.toggle_enable_bom();
+	if (!me.frm.doc.work_order || me.frm.doc.job_card) {
+		return;
+	}
+
+	if(in_list(["Return of Remaining Goods", "Manufacture Conversion", "BK Pengganti Reject", "BK Reject", "BK Sisa"], me.frm.doc.stock_entry_type)){
+		return
+	}
+	
+	return frappe.call({
+		method: "erpnext.stock.doctype.stock_entry.stock_entry.get_work_order_details",
+		args: {
+			work_order: me.frm.doc.work_order,
+			company: me.frm.doc.company,
+		},
+		callback: function (r) {
+			if (!r.exc) {
+				$.each(
+					["from_bom", "bom_no", "fg_completed_qty", "use_multi_level_bom"],
+					function (i, field) {
+						me.frm.set_value(field, r.message[field]);
+					}
+				);
+
+				if (me.frm.doc.purpose == "Material Transfer for Manufacture" && !me.frm.doc.to_warehouse)
+					me.frm.set_value("to_warehouse", r.message["wip_warehouse"]);
+
+				if (
+					me.frm.doc.purpose == "Manufacture" ||
+					me.frm.doc.purpose == "Material Consumption for Manufacture"
+				) {
+					if (me.frm.doc.purpose == "Manufacture") {
+						if (!me.frm.doc.to_warehouse)
+							me.frm.set_value("to_warehouse", r.message["fg_warehouse"]);
+					}
+					if (!me.frm.doc.from_warehouse)
+						me.frm.set_value("from_warehouse", r.message["wip_warehouse"]);
+				}
+				me.get_items();
+			}
+		},
+	});
+}

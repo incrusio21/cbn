@@ -269,7 +269,7 @@ def perintah_produksi_query(doctype, txt, searchfield, start, page_len, filters,
         limit %(start)s, %(page_len)s """.format(
             columns=columns,
             scond=searchfields,
-            fcond=get_filters_cond("Perintah Produksi Item", filters, conditions).replace("%", "%%"),
+            fcond=get_filters_cond("Perintah Produksi Item", filters, conditions, True).replace("%", "%%"),
             mcond=get_match_cond(doctype).replace("%", "%%"),
             description_cond=description_cond,
         ),
@@ -308,7 +308,7 @@ def get_batch_no(doctype, txt, searchfield, start, page_len, filters):
 
 def get_ste_draft(batches, batch_no, filters):
     warehouse = filters.get("warehouse")
-    parent = filters.get("parent")
+    detail_name = filters.get("detail_name")
     
     sted = frappe.qb.DocType("Stock Entry Detail")
 
@@ -323,7 +323,7 @@ def get_ste_draft(batches, batch_no, filters):
         )
         .where(
             (sted.docstatus < 1)
-            & (sted.parent != parent)
+            & (sted.name != detail_name)
             & (sted.batch_no.isin(batch_no))
             & ((sted.s_warehouse == warehouse) | (sted.t_warehouse == warehouse))
         )

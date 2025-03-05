@@ -115,7 +115,7 @@ class StockEntry(StockEntry):
         # ste = frappe.qb.DocType("Stock Entry")
         # ste_child = frappe.qb.DocType("Stock Entry Detail")
 
-        items = frappe.get_value("Work Order Item", {"parent": self.work_order }, "item_code")
+        items = frappe.get_all("Work Order Item", filters={"parent": self.work_order }, pluck="item_code")
                          
         # item_list = {}
         for d in self.items:

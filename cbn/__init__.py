@@ -299,4 +299,4 @@ StockController.get_sl_entries = get_sl_entries
 StockController.update_bundle_details = update_bundle_details
 JobCard.get_overlap_for = custom_get_overlap_for
 stock_ledger.validate_negative_qty_in_future_sle = validate_negative_qty_in_future_sle
-sales_and_purchase_return.validate_quantit = validate_quantity
+sales_and_purchase_return.validate_quantity = validate_quantity

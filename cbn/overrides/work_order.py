@@ -120,7 +120,7 @@ class WorkOrder(WorkOrder):
                         AND (detail.item_code = %(item)s
                             OR detail.original_item = %(item)s)
                         AND (detail.name = %(detail_name)s
-                            OR ifnull(detail.name, "") == "")
+                            OR ifnull(detail.name, "") = "")
                 """,
                 {"name": self.name, "item": item.item_code, "detail_name": item.name},
             )[0][0]
