@@ -23,5 +23,23 @@ frappe.ui.form.on("Production Plan", {
 				},
 			};
 		});
-    }
+    },
+	planned_start_date(frm){
+		frm.doc.po_items.forEach((value) => {
+			value.planned_start_date = frm.doc.planned_start_date
+		});
+		refresh_field("po_items");
+	}
 })
+
+frappe.ui.form.on("Production Plan Item", {
+	po_items_add(frm, cdt, cdn){
+		var item = locals[cdt][cdn]
+
+		if(frm.doc.planned_start_date){
+			item.planned_start_date = frm.doc.planned_start_date
+		}
+
+		refresh_field("po_items");
+	}
+});
