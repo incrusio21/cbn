@@ -106,7 +106,7 @@ frappe.ui.form.on("Job Card", {
 	}
 })
 
-frappe.ui.form.on("Job Card Time Log'", {
+frappe.ui.form.on("Job Card Time Log", {
 	time_logs_add(frm, cdt, cdn){
 		var item = locals[cdt][cdn]
 
@@ -115,7 +115,7 @@ frappe.ui.form.on("Job Card Time Log'", {
 		}
 
 		if(frm.doc.expected_end_date){
-			item.to_time = frm.doc.to_time
+			item.to_time = frm.doc.expected_end_date
 		}
 
 		refresh_field("time_logs");
