@@ -105,3 +105,19 @@ frappe.ui.form.on("Job Card", {
 		}
 	}
 })
+
+frappe.ui.form.on("Job Card Time Log'", {
+	time_logs_add(frm, cdt, cdn){
+		var item = locals[cdt][cdn]
+
+		if(frm.doc.expected_start_date){
+			item.from_time = frm.doc.expected_start_date
+		}
+
+		if(frm.doc.expected_end_date){
+			item.to_time = frm.doc.to_time
+		}
+
+		refresh_field("time_logs");
+	}
+});
