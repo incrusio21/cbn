@@ -138,7 +138,7 @@ def create_manufacture_conversion_uom(work_order_id):
 
 	item_dict = {
 		"item_code": work_order.production_item,
-		"qty": flt(work_order.produced_qty - work_order.process_loss_qty - work_order.custom_converted_qty),
+		"qty": flt(work_order.produced_qty - work_order.custom_converted_qty),
 		"from_warehouse": work_order.fg_warehouse,
 		"custom_batch": work_order.custom_batch
 	}

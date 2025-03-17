@@ -103,6 +103,7 @@ class WorkOrder(WorkOrder):
         """
 
         item_consumend = {}
+        precision = frappe.get_precision('Work Order Item', "consumed_qty")
         for item in self.required_items:
             # set item yang belum ada pada dict
             if not item_consumend.get(item.item_code): 
@@ -133,15 +134,15 @@ class WorkOrder(WorkOrder):
             item.db_set("consumed_qty", item_to_consumed, update_modified=False)
 
             # kurangi jumlah barang yang di konsumsi untuk item yang sama
-            item_consumend[item.item_code] -= (flt(item.consumed_qty) or 0.0)
+            item_consumend[item.item_code] = flt(item_consumend[item.item_code] - (flt(item.consumed_qty) or 0.0), precision)
 
-        for item, consumed in item_consumend.items():
+        for item_code, consumed in item_consumend.items():
             # memastikan tidak ada barang yang konsumsi lebih besar dari barang yang d transfer
             if (flt(consumed) or 0.0) > 0:
                 frappe.throw(
                     "This transaction cannot be completed because {0} units of {1} exceed the limit of {2}.".format(
                         flt(consumed),
-                        frappe.get_desk_link("Item", item.item_code),
+                        frappe.get_desk_link("Item", item_code),
                         frappe.get_desk_link("Work Order", self.name),
                     )        
                 )
