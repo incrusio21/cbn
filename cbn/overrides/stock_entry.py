@@ -13,7 +13,7 @@ from erpnext.stock.get_item_details import (
 from frappe.utils.data import cint, cstr, flt, getdate
 from erpnext.stock.doctype.item.item import get_item_defaults
 from erpnext.manufacturing.doctype.bom.bom import add_additional_cost
-from erpnext.stock.doctype.stock_entry.stock_entry import FinishedGoodError, StockEntry, get_available_materials
+from erpnext.stock.doctype.stock_entry.stock_entry import FinishedGoodError, StockEntry
 
 class StockEntry(StockEntry):
     # begin: auto-generated types
@@ -85,8 +85,13 @@ class StockEntry(StockEntry):
         self.validate_work_order_transferred_qty_for_required_items()
 
     def before_submit(self):
+        self.set_raw_material_loss()
         self.update_or_add_conversion_batch_manufacture()
 
+    def set_raw_material_loss(self):
+        if self.stock_entry_type not in ["Manufacture"] or not self.process_loss_qty:
+            return
+        
     def update_or_add_conversion_batch_manufacture(self):
         if self.stock_entry_type not in ["Manufacture Conversion"] or not self.custom_batch:
             return

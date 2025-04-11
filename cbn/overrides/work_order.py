@@ -106,26 +106,41 @@ class WorkOrder(WorkOrder):
         precision = frappe.get_precision('Work Order Item', "consumed_qty")
         for item in self.required_items:
             # set item yang belum ada pada dict
-            if not item_consumend.get(item.item_code): 
-                consumed_qty = frappe.db.sql(
-                    """
-                    SELECT
-                        SUM(detail.qty)
-                    FROM
-                        `tabStock Entry` entry,
-                        `tabStock Entry Detail` detail
-                    WHERE
-                        entry.work_order = %(name)s
-                            AND (entry.purpose = "Material Consumption for Manufacture"
-                                OR entry.purpose = "Manufacture")
-                            AND entry.docstatus = 1
-                            AND detail.parent = entry.name
-                            AND detail.s_warehouse IS NOT null
-                            AND (detail.item_code = %(item)s
-                                OR detail.original_item = %(item)s)
-                    """,
-                    {"name": self.name, "item": item.item_code},
-                )[0][0]
+            if not item_consumend.get(item.item_code):
+                consumed_qty = frappe.db.sql("""
+                    SELECT 
+                        COALESCE((
+                            SELECT
+                                SUM(detail.qty)
+                            FROM
+                                `tabStock Entry` entry,
+                                `tabStock Entry Detail` detail
+                            WHERE
+                                entry.work_order = %(name)s
+                                    AND (entry.purpose = "Material Consumption for Manufacture"
+                                        OR entry.purpose = "Manufacture")
+                                    AND entry.docstatus = 1
+                                    AND detail.parent = entry.name
+                                    AND detail.s_warehouse IS NOT null
+                                    AND (detail.item_code = %(item)s
+                                        OR detail.original_item = %(item)s)
+                        ), 0) + 
+                        COALESCE((
+                            SELECT
+                                SUM(detail.qty)
+                            FROM
+                                `tabStock Entry` entry,
+                                `tabStock Entry Detail Loss` detail
+                            WHERE
+                                entry.work_order = %(name)s
+                                    AND (entry.purpose = "Material Consumption for Manufacture"
+                                        OR entry.purpose = "Manufacture")
+                                    AND entry.docstatus = 1
+                                    AND detail.parent = entry.name
+                                    AND (detail.item_code = %(item)s
+                                        OR detail.original_item = %(item)s)
+                        ), 0)
+                    """, {"name": self.name, "item": item.item_code})[0][0] or 0.0
 
                 item_consumend.setdefault(item.item_code, (flt(consumed_qty) or 0.0))
             
