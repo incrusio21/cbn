@@ -159,9 +159,10 @@ doc_events = {
     "Item": {
 		"validate": "cbn.cbn.custom.item.validate_item_parent"
 	},
-    # "Stock Entry": {
-    #     "validate": "cbn.cbn.custom.stock_entry.remove_qa_not_in_items"
-    # },
+    "Stock Entry": {
+        "on_submit": "cbn.cbn.custom.stock_entry.validate_and_update_loss_item",
+        "on_cancel": "cbn.cbn.custom.stock_entry.validate_and_update_loss_item"
+    },
     "Production Plan": {
         "on_submit": ["cbn.cbn.custom.production_plan.update_batch_manufacture", "cbn.cbn.custom.production_plan.add_conversion_batch_manufacture"],
         "on_cancel": ["cbn.cbn.custom.production_plan.update_batch_manufacture"],

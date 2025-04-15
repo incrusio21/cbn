@@ -1,6 +1,8 @@
 // Copyright (c) 2024, DAS and Contributors 
 // // License: GNU General Public License v3. See license.txt
 
+frappe.provide("cbn.utils");
+
 frappe.ui.form.on("Stock Entry", {
 	setup: function (frm) {
         frm.set_query("batch_no", "items", function (doc, cdt, cdn) {
@@ -66,15 +68,135 @@ frappe.ui.form.on("Stock Entry", {
 				frm.doc.per_transferred_loss < 100
 			) {
 				frm.add_custom_button(__("Transfer Loss Item"), function () {
-					frappe.model.open_mapped_doc({
-						method: "erpnext.stock.doctype.stock_entry.stock_entry.make_stock_in_entry",
+					cbn.utils.transfer_loss_item({
 						frm: frm,
+						child_docname: "loss_items",
 					});
 				});
 			}
 		}
 	}
 })
+
+cbn.utils.transfer_loss_item = function (opts) {
+	const frm = opts.frm;
+	const child_meta = frappe.get_meta(`Stock Entry Detail Loss`);
+	const get_precision = (fieldname) => child_meta.fields.find((f) => f.fieldname == fieldname).precision;
+
+	this.data = frm.doc[opts.child_docname].filter((item) => item.qty > item.transferred_qty).map((d) => {
+		return {
+			docname: d.name,
+			item_code: d.item_code,
+			stock_uom: d.uom,
+			qty: d.qty,
+			transferred_qty: d.transferred_qty,
+		};
+	});
+
+	const fields = [
+		{
+			fieldtype: "Data",
+			fieldname: "docname",
+			read_only: 1,
+			hidden: 1,
+		},
+		{
+			fieldtype: "Link",
+			fieldname: "item_code",
+			options: "Item",
+			in_list_view: 1,
+			read_only: 1,
+			disabled: 0,
+			label: __("Item Code")
+		},
+		{
+			fieldtype: "Link",
+			fieldname: "stock_uom",
+			options: "UOM",
+			in_list_view: 1,
+			columns: 1,
+			read_only: 1,
+			disabled: 0,
+			label: __("UOM")
+		},
+		{
+			fieldtype: "Float",
+			fieldname: "qty",
+			default: 0,
+			columns: 1,
+			read_only: 1,
+			in_list_view: 1,
+			precision: get_precision("qty"),
+			label: __("Qty"),
+		},
+		{
+			fieldtype: "Float",
+			fieldname: "transferred_qty",
+			default: 0,
+			read_only: 1,
+			in_list_view: 1,
+			precision: get_precision("transferred_qty"),
+			label: __("Transferred Qty"),
+		},
+		{
+			fieldtype: "Float",
+			fieldname: "good_qty",
+			default: 0,
+			read_only: 0,
+			in_list_view: 1,
+			label: __("Good Qty"),
+		},
+		{
+			fieldtype: "Float",
+			fieldname: "rejected_qty",
+			default: 0,
+			read_only: 0,
+			in_list_view: 1,
+			label: __("Rejected Qty"),
+		},
+	]
+
+	let dialog = new frappe.ui.Dialog({
+		title: __("Set Transfered Loss Item"),
+		size: "extra-large",
+		fields: [
+			{
+				fieldname: "trans_items",
+				fieldtype: "Table",
+				label: "Items",
+				cannot_add_rows: 1,
+				cannot_delete_rows: 1,
+				in_place_edit: false,
+				reqd: 1,
+				data: this.data,
+				get_data: () => {
+					return this.data;
+				},
+				fields: fields,
+			}
+		],
+		primary_action: function () {
+			const trans_items = this.get_values()["trans_items"].filter((item) => !!(item.good_qty || item.rejected_qty));
+
+			if (trans_items.length == 0) {
+				frappe.throw("Please fill in the quantity on one of the rows")
+			}
+
+			frappe.model.open_mapped_doc({
+				method: "cbn.cbn.custom.stock_entry.make_stock_in_entry_loss_transfer",
+				frm: frm,
+				args: {
+					trans_items: trans_items
+				},
+				freeze: true,
+				freeze_message: __("Creating Stock Entry Transfer ..."),
+			});
+		},
+		primary_action_label: __("Submit"),
+	})
+
+	dialog.show();
+}
 
 cur_frm.cscript.work_order = () => {
 	var me = this;

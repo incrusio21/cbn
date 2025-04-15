@@ -11,6 +11,8 @@
   "goods_can_be_loss",
   "column_break_dovt",
   "formula",
+  "section_break_aqgl",
+  "transfered_warehouse",
   "section_break_iwvz",
   "details"
  ],
@@ -53,11 +55,22 @@
    "fieldname": "goods_can_be_loss",
    "fieldtype": "Check",
    "label": "Goods can be Loss"
+  },
+  {
+   "fieldname": "section_break_aqgl",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval:doc.goods_can_be_loss",
+   "fieldname": "transfered_warehouse",
+   "fieldtype": "Table",
+   "label": "Transfered Warehouse",
+   "options": "Perintah Produksi Warehouse"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-04-15 09:15:45.237655",
+ "modified": "2025-04-15 15:22:10.415992",
  "modified_by": "Administrator",
  "module": "Cbn",
  "name": "Perintah Produksi",
