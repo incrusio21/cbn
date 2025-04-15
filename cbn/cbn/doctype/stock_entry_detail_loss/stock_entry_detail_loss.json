@@ -12,7 +12,6 @@
   "section_break_2",
   "s_warehouse",
   "col_break1",
-  "t_warehouse",
   "sec_break1",
   "item_code",
   "item_name",
@@ -68,18 +67,10 @@
   "bom_no",
   "allow_alternative_item",
   "col_break6",
-  "material_request",
-  "material_request_item",
   "original_item",
   "reference_section",
-  "against_stock_entry",
-  "ste_detail",
-  "po_detail",
-  "sco_rm_detail",
-  "putaway_rule",
-  "column_break_51",
-  "reference_purchase_receipt",
-  "job_card_item"
+  "perintah_produksi",
+  "item_detail"
  ],
  "fields": [
   {
@@ -111,15 +102,6 @@
   {
    "fieldname": "col_break1",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "t_warehouse",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Target Warehouse",
-   "oldfieldname": "t_warehouse",
-   "oldfieldtype": "Link",
-   "options": "Warehouse"
   },
   {
    "fieldname": "sec_break1",
@@ -504,28 +486,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "Material Request used to make this Stock Entry",
-   "fieldname": "material_request",
-   "fieldtype": "Link",
-   "hidden": 1,
-   "label": "Material Request",
-   "no_copy": 1,
-   "options": "Material Request",
-   "print_hide": 1,
-   "read_only": 1,
-   "search_index": 1
-  },
-  {
-   "fieldname": "material_request_item",
-   "fieldtype": "Link",
-   "hidden": 1,
-   "label": "Material Request Item",
-   "no_copy": 1,
-   "options": "Material Request Item",
-   "print_hide": 1,
-   "read_only": 1
-  },
-  {
    "fieldname": "original_item",
    "fieldtype": "Link",
    "hidden": 1,
@@ -542,72 +502,6 @@
    "label": "Reference"
   },
   {
-   "fieldname": "against_stock_entry",
-   "fieldtype": "Link",
-   "label": "Against Stock Entry",
-   "no_copy": 1,
-   "options": "Stock Entry",
-   "print_hide": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "ste_detail",
-   "fieldtype": "Data",
-   "label": "Stock Entry Child",
-   "no_copy": 1,
-   "print_hide": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "po_detail",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "PO Supplied Item",
-   "no_copy": 1,
-   "print_hide": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "sco_rm_detail",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "SCO Supplied Item",
-   "no_copy": 1,
-   "print_hide": 1,
-   "read_only": 1
-  },
-  {
-   "depends_on": "eval:in_list([\"Material Transfer\", \"Material Receipt\"], parent.purpose)",
-   "fieldname": "putaway_rule",
-   "fieldtype": "Link",
-   "label": "Putaway Rule",
-   "no_copy": 1,
-   "options": "Putaway Rule",
-   "print_hide": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_51",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "reference_purchase_receipt",
-   "fieldtype": "Link",
-   "label": "Reference Purchase Receipt",
-   "options": "Purchase Receipt",
-   "read_only": 1
-  },
-  {
-   "fieldname": "job_card_item",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Job Card Item",
-   "no_copy": 1,
-   "print_hide": 1,
-   "read_only": 1,
-   "search_index": 1
-  },
-  {
    "allow_on_submit": 1,
    "fieldname": "custom_no_registrasi",
    "fieldtype": "Data",
@@ -622,12 +516,26 @@
    "oldfieldname": "batch_no",
    "oldfieldtype": "Link",
    "options": "Batch Manufacture"
+  },
+  {
+   "fieldname": "perintah_produksi",
+   "fieldtype": "Link",
+   "label": "Perintah Produksi",
+   "options": "Perintah Produksi",
+   "read_only": 1
+  },
+  {
+   "fieldname": "item_detail",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Item Detail",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-04-10 16:12:21.130754",
+ "modified": "2025-04-15 11:51:57.939128",
  "modified_by": "Administrator",
  "module": "Cbn",
  "name": "Stock Entry Detail Loss",

@@ -30,7 +30,7 @@ class BatchManufacture:
         self.item_type = ("Conversion" if self.item_details.custom_item_parent 
         else "Production" if self.item_details.item_group == bm_setting.proc_item_group 
         else "Sub Assembly" if self.item_details.item_group == bm_setting.sa_item_group 
-        else frappe.throw("The Item Group {} is neither a production item nor a sub-assembly.".format(self.item_details.item_group)))
+        else frappe.throw("The Item Group {} is neither a production item, conversion nor a sub-assembly.".format(self.item_details.item_group)))
 
     def set_item_details(self):
         fields = [

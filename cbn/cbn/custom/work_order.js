@@ -140,6 +140,24 @@ erpnext.work_order.show_prompt_for_perintah_produksi = function (frm, purpose) {
 	});
 }
 
+erpnext.work_order.get_max_transferable_qty = function (frm, purpose) {
+	let max = 0;
+	if (purpose === "Disassemble") {
+		return flt(frm.doc.produced_qty);
+	}
+
+	if (frm.doc.skip_transfer) {
+		max = flt(frm.doc.qty) - flt(frm.doc.produced_qty);
+	} else {
+		if (purpose === "Manufacture") {
+			max = flt(frm.doc.material_transferred_for_manufacturing) - flt(frm.doc.produced_qty) - flt(frm.doc.process_loss_qty);
+		} else {
+			max = flt(frm.doc.qty) - flt(frm.doc.material_transferred_for_manufacturing);
+		}
+	}
+	return flt(max, precision("qty"));
+}
+
 erpnext.work_order.make_se = function (frm, purpose) {
 	if(purpose == "Material Transfer for Manufacture"){
 		var prompt = this.show_prompt_for_perintah_produksi(frm, purpose)

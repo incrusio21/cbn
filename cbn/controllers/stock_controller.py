@@ -16,6 +16,7 @@ def make_quality_inspections(doctype, docname, items):
         batch_manufacture = frappe.get_value(doctype, docname, ["custom_batch"])
 
     inspections = []
+    doc_type = doctype + (" Item" if doctype not in ["Stock Entry"] else " Detail")
     for item in items:
         if flt(item.get("sample_size")) > flt(item.get("qty")):
             frappe.throw(
@@ -27,6 +28,13 @@ def make_quality_inspections(doctype, docname, items):
                     accepted_quantity=item.get("qty"),
                 )
             )
+        
+        if not frappe.db.exists(doc_type, item.get("docname")):
+            frappe.throw(
+                _(
+                    "Please save the document first before proceeding."
+                )
+            )
 
         quality_inspection = frappe.get_doc(
             {
@@ -35,6 +43,7 @@ def make_quality_inspections(doctype, docname, items):
                 "inspected_by": frappe.session.user,
                 "reference_type": doctype,
                 "reference_name": docname,
+                "custom_reference_no": item.get("docname"),
                 "custom_batch": batch_manufacture,
                 "item_code": item.get("item_code"),
                 "description": item.get("description"),
@@ -43,8 +52,11 @@ def make_quality_inspections(doctype, docname, items):
                 "batch_no": item.get("batch_no"),
             }
         ).insert()
+
         quality_inspection.save()
         inspections.append(quality_inspection.name)
+        if item.get("docname"):
+            frappe.db.set_value(doc_type, item.get("docname"), "quality_inspection", quality_inspection.name)
 
     return inspections
 

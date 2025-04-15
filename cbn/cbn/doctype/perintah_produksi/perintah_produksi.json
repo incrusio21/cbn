@@ -8,6 +8,7 @@
  "field_order": [
   "disabled",
   "can_return",
+  "goods_can_be_loss",
   "column_break_dovt",
   "formula",
   "section_break_iwvz",
@@ -46,11 +47,17 @@
   {
    "fieldname": "section_break_iwvz",
    "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "goods_can_be_loss",
+   "fieldtype": "Check",
+   "label": "Goods can be Loss"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-02-05 17:01:38.026781",
+ "modified": "2025-04-15 09:15:45.237655",
  "modified_by": "Administrator",
  "module": "Cbn",
  "name": "Perintah Produksi",

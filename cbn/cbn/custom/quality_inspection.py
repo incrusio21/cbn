@@ -8,7 +8,7 @@ def set_job_card_bm(self, method=None):
         return
     
     self.custom_batch = frappe.get_value(self.reference_type, self.reference_name, "custom_batch")
-
+    
 @frappe.whitelist()
 def get_job_card(job_card):
     jc = frappe.qb.DocType("Job Card")
