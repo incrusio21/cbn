@@ -143,6 +143,7 @@ override_doctype_class = {
 	"Production Plan": "cbn.overrides.production_plan.ProductionPlan",
 	"Stock Entry": "cbn.overrides.stock_entry.StockEntry",
 	"Stock Ledger Entry": "cbn.overrides.stock_ledger_entry.StockLedgerEntry",
+	"Stock Reconciliation": "cbn.overrides.stock_reconciliation.StockReconciliation",
 	"Work Order": "cbn.overrides.work_order.WorkOrder",
 }
 
