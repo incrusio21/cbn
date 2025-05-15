@@ -15,6 +15,6 @@ class StockLedgerEntry(StockLedgerEntry):
 				sle=self,
 				item_code=self.item_code,
 				warehouse=self.warehouse,
-				company=self.company,
+				company=self.company
 			)
             

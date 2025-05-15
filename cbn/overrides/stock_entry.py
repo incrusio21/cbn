@@ -350,7 +350,7 @@ class StockEntry(StockEntry):
             if data and data[0].process_loss_qty is not None:
                 process_loss_qty = data[0].process_loss_qty
                 if flt(self.process_loss_qty, precision) != flt(process_loss_qty, precision):
-                    self.process_loss_qty = flt(process_loss_qty, precision)
+                    self.process_loss_qty = flt(process_loss_qty - (self.pro_doc.get("process_loss_qty") or 0), precision)
 
                     frappe.msgprint(
                         _("The Process Loss Qty has reset as per job cards Process Loss Qty"), alert=True
