@@ -143,6 +143,7 @@ override_doctype_class = {
 	"Production Plan": "cbn.overrides.production_plan.ProductionPlan",
 	"Stock Entry": "cbn.overrides.stock_entry.StockEntry",
 	"Stock Ledger Entry": "cbn.overrides.stock_ledger_entry.StockLedgerEntry",
+	"Stock Reconciliation": "cbn.overrides.stock_reconciliation.StockReconciliation",
 	"Work Order": "cbn.overrides.work_order.WorkOrder",
 }
 
@@ -159,9 +160,13 @@ doc_events = {
     "Item": {
 		"validate": "cbn.cbn.custom.item.validate_item_parent"
 	},
+    "BOM": {
+        "validate": "cbn.cbn.custom.bom.calculate_total_qty"
+    },
     "Stock Entry": {
         "on_submit": "cbn.cbn.custom.stock_entry.validate_and_update_loss_item",
-        "on_cancel": "cbn.cbn.custom.stock_entry.validate_and_update_loss_item"
+        "on_cancel": "cbn.cbn.custom.stock_entry.validate_and_update_loss_item",
+        "validate": "cbn.cbn.custom.stock_entry.calculate_total_qty"
     },
     "Production Plan": {
         "on_submit": ["cbn.cbn.custom.production_plan.update_batch_manufacture", "cbn.cbn.custom.production_plan.add_conversion_batch_manufacture"],

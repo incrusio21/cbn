@@ -167,9 +167,10 @@ def validate_negative_qty_in_future_sle(args, allow_negative_stock=False):
 		neg_batch_sle = get_future_sle_with_negative_batch_manufactur_qty(args)
 		if is_negative_with_precision(neg_batch_sle, is_batch=True):
 			message = _(
-				"{0} units of {1} needed in {2} on {3} {4} for {5} to complete this transaction."
+				"{0} units of {1} Batch {2} needed in {3} on {4} {5} for {6} to complete this transaction."
 			).format(
 				abs(neg_batch_sle[0]["cumulative_total"]),
+				frappe.get_desk_link("Item", args.item_code),
 				frappe.get_desk_link("Batch Manufacture", args.custom_batch),
 				frappe.get_desk_link("Warehouse", args.warehouse),
 				neg_batch_sle[0]["posting_date"],

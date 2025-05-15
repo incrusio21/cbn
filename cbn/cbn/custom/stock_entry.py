@@ -64,6 +64,14 @@ def make_stock_in_entry_loss_transfer(source_name, target_doc=None):
     target.stock_entry_type = "Transfer Process Loss Item"
     target.purpose = None
     target.manufacture_stock_entry = source_name
+    
+    doc = frappe.get_doc("Stock Entry", source_name)
+    for f in [
+        "work_order", "custom_batch", 
+        "custom_batch_size", "custom_gramasi", "custom_kode_produksi", 
+        "custom_production_item", "custom_other_comments_or_special_instructions"]:
+        if doc.get(f):
+            target.set(f, doc.get(f))
 
     for d in frappe.flags.args.trans_items:
         d = frappe._dict(d)
@@ -95,3 +103,13 @@ def make_stock_in_entry_loss_transfer(source_name, target_doc=None):
     target.set_purpose_for_stock_entry()
 
     return target
+
+# Custom Krisna 06052025
+def calculate_total_qty(self, method):
+    if not self.items:
+        return
+    
+    self.custom_total_qty = 0
+    for item in self.items:
+        self.custom_total_qty += item.qty
+        
