@@ -93,6 +93,13 @@ class StockEntry(StockEntry):
         if self.stock_entry_type not in ["Manufacture"] or not self.process_loss_qty:
             return
 
+        precision = frappe.get_precision("Stock Entry Detail", "qty")
+        # get qty item per loss qty
+        items = {}
+        for bom in frappe.get_all("BOM Item", 
+            filters={"parent": self.bom_no}, fields=["item_code", "qty"]):
+            items.setdefault(bom.item_code, flt(bom.qty * self.process_loss_qty, precision))
+        
         loss_items = {}
         removed_item = []
         for d in self.items:
@@ -101,18 +108,18 @@ class StockEntry(StockEntry):
             
             key = (d.original_item or d.item_code, d.perintah_produksi)
             loss_items.setdefault(key, 0)
+            process_loss_qty = items.get((d.original_item or d.item_code))
             
-            if loss_items[key] >= self.process_loss_qty:
+            if flt(loss_items[key], precision) >= process_loss_qty:
                 continue
             
             item = d.as_dict(no_default_fields=True).copy()
-            loss_qty = d.qty
-            if loss_items[key] + d.qty <= self.process_loss_qty:
+            loss_qty = flt(process_loss_qty - loss_items[key], precision)
+            if d.qty <= loss_qty:
                 removed_item.append(d)
             else:
-                loss_qty = self.process_loss_qty - loss_items[key]
                 item.update({"qty": loss_qty, "item_detail": d.name})
-                d.qty -= loss_qty
+                d.qty = flt(d.qty - loss_qty, precision)
 
             loss_items[key] += loss_qty
             self.append("loss_items", item)
