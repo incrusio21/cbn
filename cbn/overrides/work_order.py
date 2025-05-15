@@ -297,5 +297,25 @@ class WorkOrder(WorkOrder):
             self.set_produced_qty_for_sub_assembly_item()
             self.update_production_plan_status()
 
+    def update_production_plan_status(self):
+        production_plan = frappe.get_doc("Production Plan", self.production_plan)
+        produced_qty = 0
+        if self.production_plan_item:
+            total_qty = frappe.get_all(
+                "Work Order",
+                fields="sum(produced_qty + process_loss_qty) as produced_qty",
+                filters={
+                    "docstatus": 1,
+                    "production_plan": self.production_plan,
+                    "production_plan_item": self.production_plan_item,
+                },
+                as_list=1,
+            )
+
+            produced_qty = total_qty[0][0] if total_qty else 0
+        
+        self.update_status()
+        production_plan.run_method("update_produced_pending_qty", produced_qty, self.production_plan_item)
+
 def get_doctype_map(doctype, name, filters=None, order_by=None):
 	return 
