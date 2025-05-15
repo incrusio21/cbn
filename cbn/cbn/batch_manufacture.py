@@ -42,10 +42,13 @@ class BatchManufacture:
 
         self.item_details = frappe.get_cached_value("Item", self.sle.item_code, fields, as_dict=1)
 
-    def validate_batch_inventory(self):       
+    def validate_batch_inventory(self):     
         batch_manufacture = self.sle.custom_batch
         if not self.sle.custom_batch:
             frappe.throw("Please Select Batch Manufacture for Item {}".format(self.item_code))
+
+        if self.sle.allow_negative_stock:
+            return
 
         available_batches = get_auto_batch_manufacture(
             frappe._dict(
