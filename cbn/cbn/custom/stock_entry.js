@@ -5,7 +5,7 @@ frappe.provide("cbn.utils");
 
 frappe.ui.form.on("Stock Entry", {
 	setup: function (frm) {
-        frm.set_query("batch_no", "items", function (doc, cdt, cdn) {
+		frm.set_query("batch_no", "items", function (doc, cdt, cdn) {
 			let item = locals[cdt][cdn];
 			let filters = {};
 
@@ -46,12 +46,12 @@ frappe.ui.form.on("Stock Entry", {
 				if (["Material Receipt", "Material Transfer", "Material Issue"].includes(doc.purpose)) {
 					filters["include_expired_batches"] = 1;
 				}
-                
-                query = "erpnext.controllers.queries.get_batch_no"
-                if(["Material Transfer for Manufacture"].includes(doc.purpose)){
-                    query = "cbn.controllers.queries.get_batch_no"
-                    filters["detail_name"] = item.name
-                }
+
+				query = "erpnext.controllers.queries.get_batch_no"
+				if (["Material Transfer for Manufacture"].includes(doc.purpose)) {
+					query = "cbn.controllers.queries.get_batch_no"
+					filters["detail_name"] = item.name
+				}
 
 				return {
 					query: query,
@@ -59,11 +59,11 @@ frappe.ui.form.on("Stock Entry", {
 				};
 			}
 		});
-    },
+	},
 	refresh: function (frm) {
 		if (frm.doc.docstatus === 1) {
 			if (
-				frm.doc.loss_items &&
+				(frm.doc.loss_items.length || []) > 0 &&
 				frm.doc.purpose == "Manufacture" &&
 				frm.doc.per_transferred_loss < 100
 			) {
@@ -78,6 +78,34 @@ frappe.ui.form.on("Stock Entry", {
 	}
 })
 
+frappe.ui.form.on("Stock Entry Detail", {
+	items_add: function (frm) {
+		calculateTotalQty(frm)
+	},
+	qty: function (frm) {
+		calculateTotalQty(frm)
+	},
+	items_remove: function (frm) {
+		calculateTotalQty(frm)
+	},
+})
+
+function calculateTotalQty(frm) {
+	const items = frm.doc.items;
+	let total_qty = 0
+	items.forEach(el => {
+		if (el.qty && !isNaN(el.qty)) {
+			total_qty += el.qty
+		}
+	});
+	console.log(total_qty);
+
+	if (total_qty > 0) {
+		frm.set_value("custom_total_qty", total_qty)
+		frm.refresh_field("custom_total_qty")
+	}
+}
+
 cbn.utils.transfer_loss_item = function (opts) {
 	const frm = opts.frm;
 	const child_meta = frappe.get_meta(`Stock Entry Detail Loss`);
@@ -90,6 +118,8 @@ cbn.utils.transfer_loss_item = function (opts) {
 			stock_uom: d.uom,
 			qty: d.qty,
 			transferred_qty: d.transferred_qty,
+			good_qty: 0,
+			rejected_qty: 0,
 		};
 	});
 
@@ -205,10 +235,10 @@ cur_frm.cscript.work_order = () => {
 		return;
 	}
 
-	if(in_list(["Return of Remaining Goods", "Manufacture Conversion", "BK Pengganti Reject", "BK Reject", "BK Sisa"], me.frm.doc.stock_entry_type)){
+	if (in_list(["Return of Remaining Goods", "Manufacture Conversion", "BK Pengganti Reject", "BK Reject", "BK Sisa"], me.frm.doc.stock_entry_type)) {
 		return
 	}
-	
+
 	return frappe.call({
 		method: "erpnext.stock.doctype.stock_entry.stock_entry.get_work_order_details",
 		args: {

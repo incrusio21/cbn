@@ -103,3 +103,13 @@ def get_bom_items_as_dict(
 				item_dict[item][d[1]] = frappe.get_cached_value("Company", company, d[2]) if d[2] else None
 
 	return item_dict
+
+
+# Custom Krisna 06052025
+def calculate_total_qty(self, method):
+    if not self.items:
+        return
+    
+    self.custom_total_qty = 0
+    for item in self.items:
+        self.custom_total_qty += item.qty
