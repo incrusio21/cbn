@@ -226,6 +226,16 @@ def get_stock_ledger_entries(filters, items):
 
 	query = apply_warehouse_filter(query, sle, filters)
 
+	if filters.warehouse_type and not filters.warehouse:
+		warehouses = frappe.get_all(
+			"Warehouse",
+			filters={"warehouse_type": filters.warehouse_type, "is_group": 0},
+			pluck="name",
+		)
+
+		if warehouses:
+			query = query.where(sle.warehouse.isin(warehouses))
+
 	return query.run(as_dict=True)
 
 def get_opening_balance_from_batch(filters, columns, sl_entries):
@@ -240,6 +250,16 @@ def get_opening_balance_from_batch(filters, columns, sl_entries):
 	for fields in ["item_code", "warehouse"]:
 		if filters.get(fields):
 			query_filters[fields] = filters.get(fields)
+
+	if filters.warehouse_type and not filters.warehouse:
+		warehouses = frappe.get_all(
+			"Warehouse",
+			filters={"warehouse_type": filters.warehouse_type, "is_group": 0},
+			pluck="name",
+		)
+
+		if warehouses:
+			query_filters["warehouse"] = ("in", warehouses)
 
 	return frappe.get_all(
 		"Stock Ledger Entry",
