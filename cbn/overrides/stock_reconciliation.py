@@ -1,7 +1,7 @@
 # Copyright (c) 2024, DAS and Contributors
 # License: GNU General Public License v3. See license.txt
 import frappe
-from frappe import _
+from frappe import _, bold
 from frappe.utils import cint, flt
 from erpnext.stock.doctype.stock_reconciliation.stock_reconciliation import EmptyStockReconciliationItemsError, StockReconciliation, get_stock_balance_for
 from erpnext.stock.doctype.serial_no.serial_no import get_serial_nos
@@ -9,6 +9,20 @@ from erpnext.stock.doctype.inventory_dimension.inventory_dimension import get_in
 from cbn.cbn.doctype.batch_manufacture.batch_manufacture import get_available_batches
 
 class StockReconciliation(StockReconciliation):
+    def validate_inventory_dimension(self):
+        dimensions = get_inventory_dimensions()
+        for dimension in dimensions:
+            if dimension.get("fieldname") == "custom_batch":
+                continue
+            
+            for row in self.items:
+                if not row.batch_no and row.current_qty and row.get(dimension.get("fieldname")):
+                    frappe.throw(
+                        _(
+                            "Row #{0}: You cannot use the inventory dimension '{1}' in Stock Reconciliation to modify the quantity or valuation rate. Stock reconciliation with inventory dimensions is intended solely for performing opening entries."
+                        ).format(row.idx, bold(dimension.get("doctype")))
+                    )
+                    
     def remove_items_with_no_change(self):
         """Remove items if qty or rate is not changed"""
         self.difference_amount = 0.0
@@ -128,7 +142,7 @@ class StockReconciliation(StockReconciliation):
             except frappe.UniqueValidationError:
                 frappe.message_log.pop()
                 frappe.db.rollback(save_point=add_conversion)
-
+    
     def update_stock_ledger(self):
         """find difference between current and expected entries
         and create stock ledger entries based on the difference"""

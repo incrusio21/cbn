@@ -107,23 +107,42 @@ class WorkOrder(WorkOrder):
         for item in self.required_items:
             # set item yang belum ada pada dict
             if not item_consumend.get(item.item_code):
+                filters = {"name": self.name, "item": item.item_code}
                 consumed_qty = frappe.db.sql("""
-                     SELECT
-                        SUM(detail.qty)
-                    FROM
-                        `tabStock Entry` entry,
-                        `tabStock Entry Detail` detail
-                    WHERE
-                        entry.work_order = %(name)s
-                            AND (entry.purpose = "Material Consumption for Manufacture"
-                                OR entry.purpose = "Manufacture")
-                            AND entry.docstatus = 1
-                            AND detail.parent = entry.name
-                            AND detail.s_warehouse IS NOT null
-                            AND (detail.item_code = %(item)s
-                                OR detail.original_item = %(item)s)
-                    """, {"name": self.name, "item": item.item_code})[0][0] or 0.0
+                    SELECT SUM(qty) FROM (
+                        SELECT
+                            detail.qty
+                        FROM
+                            `tabStock Entry` entry,
+                            `tabStock Entry Detail` detail
+                        WHERE
+                            entry.work_order = %(name)s
+                                AND (entry.purpose = "Material Consumption for Manufacture"
+                                    OR entry.purpose = "Manufacture")
+                                AND entry.docstatus = 1
+                                AND detail.parent = entry.name
+                                AND detail.s_warehouse IS NOT null
+                                AND (detail.item_code = %(item)s
+                                    OR detail.original_item = %(item)s)
 
+                        UNION ALL
+
+                        SELECT
+                            detail_loss.qty
+                        FROM
+                            `tabStock Entry` entry_loss,
+                            `tabStock Entry Detail Loss` detail_loss
+                        WHERE
+                            entry_loss.work_order = %(name)s
+                                AND (entry_loss.purpose = "Material Consumption for Manufacture"
+                                    OR entry_loss.purpose = "Manufacture")
+                                AND entry_loss.docstatus = 1
+                                AND detail_loss.parent = entry_loss.name
+                                AND (detail_loss.item_code = %(item)s
+                                    OR detail_loss.original_item = %(item)s)
+                    ) AS combined
+                    """, filters)[0][0] or 0.0
+                
                 item_consumend.setdefault(item.item_code, (flt(consumed_qty) or 0.0))
             
             # jika item yang d konsumsi lebih besar dari transfer maka konsumsi barang sama dengan barang yang di kirim

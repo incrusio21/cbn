@@ -4,7 +4,7 @@
 frappe.ui.form.on("Work Order", {
 	refresh(frm) {
 		var doc = frm.doc;
-
+		frm.remove_custom_button(__("Alternate Item"))
         frm.set_query("custom_batch", function (doc) {
             if(!doc.production_item){
                 frappe.throw("Select Production Item First")

@@ -109,7 +109,9 @@ class StockEntry(StockEntry):
             key = (d.original_item or d.item_code, d.perintah_produksi)
             loss_items.setdefault(key, 0)
             process_loss_qty = items.get((d.original_item or d.item_code))
-            
+            if not process_loss_qty:
+                frappe.throw("Item {} is not listed in the Bill of Materials {}".format((d.original_item or d.item_code), self.bom_no))
+                
             if flt(loss_items[key], precision) >= process_loss_qty:
                 continue
             
