@@ -126,7 +126,7 @@ def validate_negative_qty_in_future_sle(args, allow_negative_stock=False):
 	if (
 		args.voucher_type == "Stock Reconciliation"
 		and args.actual_qty < 0
-		and args.get("serial_and_batch_bundle")
+		and (args.get("serial_and_batch_bundle") or args.get("custom_batch"))
 		and frappe.db.get_value("Stock Reconciliation Item", args.voucher_detail_no, "qty") > 0
 	):
 		return
@@ -286,9 +286,37 @@ def validate_quantity(doc, args, ref, valid_items, already_returned_items):
 					),
 					sales_and_purchase_return.StockOverReturnError,
 				)
-				
+
+# tambahan ketika custom batch terisi mengikuti actual qty
+def get_stock_reco_qty_shift(args):
+	stock_reco_qty_shift = 0
+	if args.get("is_cancelled"):
+		if args.get("previous_qty_after_transaction"):
+			# get qty (balance) that was set at submission
+			last_balance = args.get("previous_qty_after_transaction")
+			stock_reco_qty_shift = flt(args.qty_after_transaction) - flt(last_balance)
+		else:
+			stock_reco_qty_shift = flt(args.actual_qty)
+
+	elif args.get("serial_and_batch_bundle") or args.get("custom_batch"):
+		stock_reco_qty_shift = flt(args.actual_qty)
+
+	else:
+		# reco is being submitted
+		last_balance = stock_ledger.get_previous_sle_of_current_voucher(args, "<=", exclude_current_voucher=True).get(
+			"qty_after_transaction"
+		)
+
+		if last_balance is not None:
+			stock_reco_qty_shift = flt(args.qty_after_transaction) - flt(last_balance)
+		else:
+			stock_reco_qty_shift = args.qty_after_transaction
+
+	return stock_reco_qty_shift
+
 StockController.get_sl_entries = get_sl_entries
 StockController.update_bundle_details = update_bundle_details
 JobCard.get_overlap_for = custom_get_overlap_for
+stock_ledger.get_stock_reco_qty_shift = get_stock_reco_qty_shift
 stock_ledger.validate_negative_qty_in_future_sle = validate_negative_qty_in_future_sle
 sales_and_purchase_return.validate_quantity = validate_quantity

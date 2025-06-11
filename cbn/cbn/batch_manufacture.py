@@ -6,7 +6,7 @@ import frappe
 from frappe import _, bold
 
 from frappe.utils import flt
-from cbn.cbn.doctype.batch_manufacture.batch_manufacture import get_auto_batch_manufacture
+from cbn.cbn.doctype.batch_manufacture.batch_manufacture import get_auto_batch_manufacture, get_available_batches
 
 class BatchNegativeStockError(frappe.ValidationError):
 	pass
@@ -50,13 +50,15 @@ class BatchManufacture:
         if self.sle.allow_negative_stock:
             return
 
-        available_batches = get_auto_batch_manufacture(
+        available_batches = get_available_batches(
             frappe._dict(
                 {
                     "item_code": self.sle.item_code,
                     "warehouse": self.sle.warehouse,
                     "batch_no": batch_manufacture,
-                    "consider_negative_batches": True,
+                    "posting_date": self.sle.posting_date,
+                    "posting_time": self.sle.posting_time,
+                    "ignore_voucher_nos": [self.sle.voucher_no],
                 }
             )
         )
