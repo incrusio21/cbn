@@ -93,6 +93,9 @@ class StockEntry(StockEntry):
         if self.stock_entry_type not in ["Manufacture"] or not self.process_loss_qty:
             return
 
+        if self.get("loss_items"):
+            frappe.throw("Create a new manufacturing process from the work order because lost items cannot be recovered.")
+
         precision = frappe.get_precision("Stock Entry Detail", "qty")
         # get qty item per loss qty
         items = {}
@@ -111,14 +114,18 @@ class StockEntry(StockEntry):
             process_loss_qty = items.get((d.original_item or d.item_code))
             if not process_loss_qty:
                 frappe.throw("Item {} is not listed in the Bill of Materials {}".format((d.original_item or d.item_code), self.bom_no))
-                
+            
+            # check apakah lost item sudah lebih besar atau tidak terhadap bom loss qty
             if flt(loss_items[key], precision) >= process_loss_qty:
                 continue
             
             item = d.as_dict(no_default_fields=True).copy()
+            
+            # check sisa loss qty
             loss_qty = flt(process_loss_qty - loss_items[key], precision)
             if d.qty <= loss_qty:
                 removed_item.append(d)
+                loss_qty = d.qty
             else:
                 item.update({"qty": loss_qty, "item_detail": d.name})
                 d.qty = flt(d.qty - loss_qty, precision)
