@@ -36,12 +36,12 @@ class WorkOrder:
 			frappe.throw("Batch {} can only be used in {} {}.".format(batch_mf.bulan, batch_mf.tahun))
 
 	def update_planing_date(self):
-		if self.production_plan:
+		if self.doc.production_plan:
 			frappe.db.set_value("Production Plan Item", {
 				"docstatus": 1,
-				"parent": self.production_plan,
-				"name": self.production_plan_item,
-			}, "planned_start_date", self.planned_start_date)
+				"parent": self.doc.production_plan,
+				"name": self.doc.production_plan_item,
+			}, "planned_start_date", self.doc.planned_start_date)
 
 	def update_or_add_sub_assembly_batch_manufacture(self):
 		if not self.doc.custom_batch:
