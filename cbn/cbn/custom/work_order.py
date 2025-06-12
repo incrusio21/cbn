@@ -5,70 +5,93 @@ import frappe
 from frappe.utils import get_link_to_form, getdate, nowdate
 from frappe.utils.data import flt
 
+class WorkOrder:
+	def __init__(self, doc, method):
+		self.doc = doc
+		self.method = method
+
+		match self.method:
+			case "validate":
+				self.validate_batch_manufacture()
+				self.update_planing_date()
+			case "on_submit" | "on_cancel":
+				self.update_status_multi_level_bom()
+				self.update_or_add_sub_assembly_batch_manufacture()
+			case "before_update_after_submit":
+				self.update_planing_date()
+
+	def validate_batch_manufacture(self):
+		if self.doc.custom_is_sub_assembly or self.doc.production_plan or not self.doc.custom_batch:
+			return
+		
+		date = getdate(self.doc.get("date"))
+		batch_mf = frappe.get_value("Batch Manufacture", self.doc.custom_batch, ["item_code", "disabled", "status", "bulan", "tahun"], as_dict=1 ,for_update=1)
+		if batch_mf.disabled:
+			frappe.throw("Batch {} disabled".format(self.doc.custom_batch))
+		elif batch_mf.item_code != self.doc.production_item:
+			frappe.throw("Batch {} cannot be used to Item {}".format(self.doc.custom_batch, self.doc.production_item))
+		elif batch_mf.status != "Empty":
+			frappe.throw("Batch {} already {}".format(self.doc.custom_batch, batch_mf.status))
+		elif date.month != batch_mf.bulan and date.year != batch_mf.tahun:
+			frappe.throw("Batch {} can only be used in {} {}.".format(batch_mf.bulan, batch_mf.tahun))
+
+	def update_planing_date(self):
+		if self.production_plan:
+			frappe.db.set_value("Production Plan Item", {
+				"docstatus": 1,
+				"parent": self.production_plan,
+				"name": self.production_plan_item,
+			}, "planned_start_date", self.planned_start_date)
+
+	def update_or_add_sub_assembly_batch_manufacture(self):
+		if not self.doc.custom_batch:
+			return
+		
+		if not self.doc.custom_is_sub_assembly:
+			frappe.set_value("Batch Manufacture", self.doc.custom_batch, "status", "Used" if self.doc.docstatus == 1 else "Empty")
+			return
+
+		if self.doc.docstatus == 1:
+			add_sub_assembly = "add_sub_assembly"
+			try:
+				frappe.db.savepoint(add_sub_assembly)
+				batch_manufacture = frappe.get_doc("Batch Manufacture", self.doc.custom_batch)
+				batch_manufacture.append("sub_assembly", {
+					"item_code": self.doc.production_item
+				})
+				batch_manufacture.flags.ignore_permissions = 1
+				batch_manufacture.save()
+			except frappe.UniqueValidationError:
+				frappe.message_log.pop()
+				frappe.db.rollback(save_point=add_sub_assembly)  # preserve transaction in postgres
+
+	def update_status_multi_level_bom(self):
+		if not self.doc.custom_is_sub_assembly:
+			return
+		
+		if not self.doc.custom_parent_work_order or not self.doc.custom_parent_work_order_item:
+			frappe.throw("Parent Work Order or Work Order Item not Found")
+
+		from cbn.controllers.status_updater import update_prev_doc
+
+		update_prev_doc(self.doc, {
+			"target_dt": 'Work Order Item',
+			"target_field": "custom_work_order_qty",
+			"source_dt": "Work Order",
+			"source_field": "qty",
+			"join_field": "custom_parent_work_order_item",
+			"target_parent_dt": "Work Order",
+			"target_parent_field": "custom_per_work_order",
+			"target_ref_field": "required_qty",
+			"percent_join_field": "custom_parent_work_order",
+			"extra_parent_cond": """ and ifnull(custom_bom, "") != "" """
+		})
+
 def generate_custom_field_to_space(self, method=None):
 	for item in self.required_items:
 		for fn in ["custom_diberi_gr", "custom_diberi_pack", "custom_petugas_gudang", "custom_ipc", "custom_keterangan"]:
 			if not item.get(fn):
 				item[fn] = "."
-
-def validate_batch_manufacture(self, method=None):
-	if self.custom_is_sub_assembly or self.production_plan or not self.custom_batch:
-		return
-	
-	date = getdate(self.get("date"))
-	batch_mf = frappe.get_value("Batch Manufacture", self.custom_batch, ["item_code", "disabled", "status", "bulan", "tahun"], as_dict=1 ,for_update=1)
-	if batch_mf.disabled:
-		frappe.throw("Batch {} disabled".format(self.custom_batch))
-	elif batch_mf.item_code != self.production_item:
-		frappe.throw("Batch {} cannot be used to Item {}".format(self.custom_batch, self.production_item))
-	elif batch_mf.status != "Empty":
-		frappe.throw("Batch {} already {}".format(self.custom_batch, batch_mf.status))
-	elif date.month != batch_mf.bulan and date.year != batch_mf.tahun:
-		frappe.throw("Batch {} can only be used in {} {}.".format(batch_mf.bulan, batch_mf.tahun))
-
-def update_or_add_sub_assembly_batch_manufacture(self, method=None):
-	if not self.custom_batch:
-		return
-	
-	if not self.custom_is_sub_assembly:
-		frappe.set_value("Batch Manufacture", self.custom_batch, "status", "Used" if self.docstatus == 1 else "Empty")
-		return
-
-	if self.docstatus == 1:
-		add_sub_assembly = "add_sub_assembly"
-		try:
-			frappe.db.savepoint(add_sub_assembly)
-			batch_manufacture = frappe.get_doc("Batch Manufacture", self.custom_batch)
-			batch_manufacture.append("sub_assembly", {
-				"item_code": self.production_item
-			})
-			batch_manufacture.flags.ignore_permissions = 1
-			batch_manufacture.save()
-		except frappe.UniqueValidationError:
-			frappe.message_log.pop()
-			frappe.db.rollback(save_point=add_sub_assembly)  # preserve transaction in postgres
-
-def update_status_multi_level_bom(self, method=None):
-	if not self.custom_is_sub_assembly:
-		return
-	
-	if not self.custom_parent_work_order or not self.custom_parent_work_order_item:
-		frappe.throw("Parent Work Order or Work Order Item not Found")
-
-	from cbn.controllers.status_updater import update_prev_doc
-
-	update_prev_doc(self, {
-		"target_dt": 'Work Order Item',
-		"target_field": "custom_work_order_qty",
-		"source_dt": "Work Order",
-		"source_field": "qty",
-		"join_field": "custom_parent_work_order_item",
-		"target_parent_dt": "Work Order",
-		"target_parent_field": "custom_per_work_order",
-		"target_ref_field": "required_qty",
-		"percent_join_field": "custom_parent_work_order",
-		"extra_parent_cond": """ and ifnull(custom_bom, "") != "" """
-	})
 
 @frappe.whitelist()
 def create_work_order(work_order):

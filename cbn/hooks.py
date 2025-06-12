@@ -176,9 +176,10 @@ doc_events = {
         "validate": "cbn.cbn.custom.quality_inspection.set_job_card_bm"
 	},
     "Work Order": {
-        "validate": ["cbn.cbn.custom.work_order.validate_batch_manufacture"],
-        "on_submit": ["cbn.cbn.custom.work_order.update_status_multi_level_bom","cbn.cbn.custom.work_order.update_or_add_sub_assembly_batch_manufacture"],
-        "on_cancel": ["cbn.cbn.custom.work_order.update_status_multi_level_bom", "cbn.cbn.custom.work_order.update_or_add_sub_assembly_batch_manufacture"],
+        "validate": "cbn.cbn.custom.work_order.WorkOrder",
+        "before_update_after_submit": "cbn.cbn.custom.work_order.WorkOrder",
+        "on_submit": "cbn.cbn.custom.work_order.WorkOrder",
+        "on_cancel": "cbn.cbn.custom.work_order.WorkOrder",
 	},
 }
 
